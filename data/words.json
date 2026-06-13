@@ -9,8 +9,8 @@
       "transcription": "/həˈloʊ/",
       "part_of_speech": "interjection",
       "examples": [
-        "Hello! How are you?",
-        "She said hello to everyone in the room."
+        {"text": "Hello! How are you?", "translation": "Привет! Как дела?"},
+        {"text": "She said hello to everyone in the room.", "translation": "Она поздоровалась со всеми в комнате."}
       ]
     },
     {
@@ -22,8 +22,60 @@
       "transcription": "/bʊk/",
       "part_of_speech": "noun",
       "examples": [
-        "I read a book every evening.",
-        "This book is very interesting."
+        {"text": "I read a book every evening.", "translation": "Я читаю книгу каждый вечер."},
+        {"text": "This book is very interesting.", "translation": "Эта книга очень интересная."}
+      ]
+    },
+    {
+      "key": "en_a1_water",
+      "language": "en",
+      "level": "A1",
+      "word": "water",
+      "translation": "вода",
+      "transcription": "/ˈwɔːtər/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "I drink water every morning.", "translation": "Я пью воду каждое утро."},
+        {"text": "The water in the lake is cold.", "translation": "Вода в озере холодная."}
+      ]
+    },
+    {
+      "key": "en_a1_friend",
+      "language": "en",
+      "level": "A1",
+      "word": "friend",
+      "translation": "друг, подруга",
+      "transcription": "/frend/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "She is my best friend.", "translation": "Она моя лучшая подруга."},
+        {"text": "I met an old friend yesterday.", "translation": "Вчера я встретил старого друга."}
+      ]
+    },
+    {
+      "key": "en_a1_house",
+      "language": "en",
+      "level": "A1",
+      "word": "house",
+      "translation": "дом",
+      "transcription": "/haʊs/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "They live in a small house.", "translation": "Они живут в маленьком доме."},
+        {"text": "Our house has a beautiful garden.", "translation": "У нашего дома красивый сад."}
+      ]
+    },
+    {
+      "key": "en_a2_time",
+      "language": "en",
+      "level": "A2",
+      "word": "time",
+      "translation": "время",
+      "transcription": "/taɪm/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "I don't have much time today.", "translation": "У меня сегодня мало времени."},
+        {"text": "What time does the train leave?", "translation": "Во сколько отправляется поезд?"}
       ]
     },
     {
@@ -35,8 +87,34 @@
       "transcription": "/ˈdʒɜːrni/",
       "part_of_speech": "noun",
       "examples": [
-        "The journey took three hours.",
-        "Life is a journey, not a destination."
+        {"text": "The journey took three hours.", "translation": "Поездка заняла три часа."},
+        {"text": "Life is a journey, not a destination.", "translation": "Жизнь — это путешествие, а не пункт назначения."}
+      ]
+    },
+    {
+      "key": "en_a2_work",
+      "language": "en",
+      "level": "A2",
+      "word": "work",
+      "translation": "работа, труд",
+      "transcription": "/wɜːrk/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "I have a lot of work to do.", "translation": "У меня много работы."},
+        {"text": "She goes to work by bus.", "translation": "Она ездит на работу на автобусе."}
+      ]
+    },
+    {
+      "key": "en_a2_beautiful",
+      "language": "en",
+      "level": "A2",
+      "word": "beautiful",
+      "translation": "красивый, прекрасный",
+      "transcription": "/ˈbjuːtɪfəl/",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "What a beautiful sunset!", "translation": "Какой прекрасный закат!"},
+        {"text": "She has a beautiful voice.", "translation": "У неё красивый голос."}
       ]
     },
     {
@@ -48,8 +126,21 @@
       "transcription": "/əˈtʃiːv/",
       "part_of_speech": "verb",
       "examples": [
-        "She achieved her goal through hard work.",
-        "We need to achieve better results."
+        {"text": "She achieved her goal through hard work.", "translation": "Она достигла своей цели благодаря упорному труду."},
+        {"text": "We need to achieve better results.", "translation": "Нам нужно добиться лучших результатов."}
+      ]
+    },
+    {
+      "key": "en_b1_experience",
+      "language": "en",
+      "level": "B1",
+      "word": "experience",
+      "translation": "опыт, переживание",
+      "transcription": "/ɪkˈspɪriəns/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "He has ten years of experience.", "translation": "У него десять лет опыта."},
+        {"text": "It was an unforgettable experience.", "translation": "Это был незабываемый опыт."}
       ]
     },
     {
@@ -61,8 +152,21 @@
       "transcription": "/æmˈbɪɡjuəs/",
       "part_of_speech": "adjective",
       "examples": [
-        "His answer was deliberately ambiguous.",
-        "The instructions were ambiguous and confusing."
+        {"text": "His answer was deliberately ambiguous.", "translation": "Его ответ был намеренно двусмысленным."},
+        {"text": "The instructions were ambiguous and confusing.", "translation": "Инструкции были неоднозначными и запутанными."}
+      ]
+    },
+    {
+      "key": "en_b2_perspective",
+      "language": "en",
+      "level": "B2",
+      "word": "perspective",
+      "translation": "перспектива, точка зрения",
+      "transcription": "/pərˈspektɪv/",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Try to see it from a different perspective.", "translation": "Попробуйте посмотреть на это с другой точки зрения."},
+        {"text": "Travel broadens your perspective on life.", "translation": "Путешествия расширяют вашу перспективу на жизнь."}
       ]
     },
     {
@@ -74,8 +178,21 @@
       "transcription": "/ɪˈfemərəl/",
       "part_of_speech": "adjective",
       "examples": [
-        "Fame can be ephemeral.",
-        "The beauty of cherry blossoms is ephemeral."
+        {"text": "Fame can be ephemeral.", "translation": "Слава может быть эфемерной."},
+        {"text": "The beauty of cherry blossoms is ephemeral.", "translation": "Красота цветения сакуры эфемерна."}
+      ]
+    },
+    {
+      "key": "en_c1_ubiquitous",
+      "language": "en",
+      "level": "C1",
+      "word": "ubiquitous",
+      "translation": "повсеместный, вездесущий",
+      "transcription": "/juːˈbɪkwɪtəs/",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Smartphones have become ubiquitous.", "translation": "Смартфоны стали повсеместными."},
+        {"text": "Coffee shops are ubiquitous in this city.", "translation": "Кофейни повсюду в этом городе."}
       ]
     },
     {
@@ -87,8 +204,8 @@
       "transcription": "[zdraːvo]",
       "part_of_speech": "interjection",
       "examples": [
-        "Zdravo! Kako si?",
-        "Zdravo, drago mi je da te vidim."
+        {"text": "Zdravo! Kako si?", "translation": "Привет! Как дела?"},
+        {"text": "Zdravo, drago mi je da te vidim.", "translation": "Привет, рад тебя видеть."}
       ]
     },
     {
@@ -100,8 +217,60 @@
       "transcription": "[knjiːɡa]",
       "part_of_speech": "noun",
       "examples": [
-        "Ova knjiga je veoma zanimljiva.",
-        "Čitam knjigu svake večeri."
+        {"text": "Ova knjiga je veoma zanimljiva.", "translation": "Эта книга очень интересная."},
+        {"text": "Čitam knjigu svake večeri.", "translation": "Я читаю книгу каждый вечер."}
+      ]
+    },
+    {
+      "key": "sr_a1_voda",
+      "language": "sr",
+      "level": "A1",
+      "word": "voda",
+      "translation": "вода",
+      "transcription": "[voda]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Pijem vodu svako jutro.", "translation": "Я пью воду каждое утро."},
+        {"text": "Voda u jezeru je hladna.", "translation": "Вода в озере холодная."}
+      ]
+    },
+    {
+      "key": "sr_a1_prijatelj",
+      "language": "sr",
+      "level": "A1",
+      "word": "prijatelj",
+      "translation": "друг, подруга",
+      "transcription": "[prijateʎ]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "On je moj najbolji prijatelj.", "translation": "Он мой лучший друг."},
+        {"text": "Srela sam starog prijatelja juče.", "translation": "Вчера я встретила старого друга."}
+      ]
+    },
+    {
+      "key": "sr_a1_kuća",
+      "language": "sr",
+      "level": "A1",
+      "word": "kuća",
+      "translation": "дом",
+      "transcription": "[kuːtɕa]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Žive u maloj kući.", "translation": "Они живут в маленьком доме."},
+        {"text": "Naša kuća ima lep vrt.", "translation": "У нашего дома красивый сад."}
+      ]
+    },
+    {
+      "key": "sr_a2_vreme",
+      "language": "sr",
+      "level": "A2",
+      "word": "vreme",
+      "translation": "время, погода",
+      "transcription": "[ʋreme]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Nemam mnogo vremena danas.", "translation": "У меня сегодня мало времени."},
+        {"text": "Vreme je lepo danas.", "translation": "Сегодня хорошая погода."}
       ]
     },
     {
@@ -113,8 +282,34 @@
       "transcription": "[putovaːnje]",
       "part_of_speech": "noun",
       "examples": [
-        "Putovanje je bilo divno.",
-        "Volim putovanja u inostranstvo."
+        {"text": "Putovanje je bilo divno.", "translation": "Путешествие было прекрасным."},
+        {"text": "Volim putovanja u inostranstvo.", "translation": "Я люблю путешествия за границу."}
+      ]
+    },
+    {
+      "key": "sr_a2_rad",
+      "language": "sr",
+      "level": "A2",
+      "word": "rad",
+      "translation": "работа, труд",
+      "transcription": "[raːd]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Imam mnogo posla danas.", "translation": "У меня сегодня много работы."},
+        {"text": "Ona ide na posao autobusom.", "translation": "Она ездит на работу на автобусе."}
+      ]
+    },
+    {
+      "key": "sr_a2_lep",
+      "language": "sr",
+      "level": "A2",
+      "word": "lep",
+      "translation": "красивый, прекрасный",
+      "transcription": "[leːp]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Kakav lep zalazak sunca!", "translation": "Какой прекрасный закат!"},
+        {"text": "Ona ima lep glas.", "translation": "У неё красивый голос."}
       ]
     },
     {
@@ -126,8 +321,73 @@
       "transcription": "[postiɡnuːtɕe]",
       "part_of_speech": "noun",
       "examples": [
-        "To je veliko postignuće.",
-        "Njegovo postignuće je impresivno."
+        {"text": "To je veliko postignuće.", "translation": "Это большое достижение."},
+        {"text": "Njegovo postignuće je impresivno.", "translation": "Его достижение впечатляет."}
+      ]
+    },
+    {
+      "key": "sr_b1_iskustvo",
+      "language": "sr",
+      "level": "B1",
+      "word": "iskustvo",
+      "translation": "опыт, переживание",
+      "transcription": "[iskustʋo]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Ima deset godina iskustva.", "translation": "У него десять лет опыта."},
+        {"text": "To je bilo nezaboravno iskustvo.", "translation": "Это был незабываемый опыт."}
+      ]
+    },
+    {
+      "key": "sr_b2_dvosmislen",
+      "language": "sr",
+      "level": "B2",
+      "word": "dvosmislen",
+      "translation": "двусмысленный, неоднозначный",
+      "transcription": "[dʋosmislen]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Njegov odgovor je bio namerno dvosmislen.", "translation": "Его ответ был намеренно двусмысленным."},
+        {"text": "Uputstva su bila dvosmislena i zbunjujuća.", "translation": "Инструкции были неоднозначными и запутанными."}
+      ]
+    },
+    {
+      "key": "sr_b2_perspektiva",
+      "language": "sr",
+      "level": "B2",
+      "word": "perspektiva",
+      "translation": "перспектива, точка зрения",
+      "transcription": "[perspektiʋa]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Pokušaj da vidiš iz druge perspektive.", "translation": "Попробуй посмотреть с другой точки зрения."},
+        {"text": "Putovanja proširuju tvoju perspektivu.", "translation": "Путешествия расширяют твою перспективу."}
+      ]
+    },
+    {
+      "key": "sr_c1_prolazan",
+      "language": "sr",
+      "level": "C1",
+      "word": "prolazan",
+      "translation": "эфемерный, мимолётный",
+      "transcription": "[prolaːzan]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Slava može biti prolazna.", "translation": "Слава может быть эфемерной."},
+        {"text": "Lepota cveta trešnje je prolazna.", "translation": "Красота цветения сакуры мимолётна."}
+      ]
+    },
+    {
+      "key": "sr_c1_sveprisutan",
+      "language": "sr",
+      "level": "C1",
+      "word": "sveprisutan",
+      "translation": "повсеместный, вездесущий",
+      "transcription": "[sʋeprisutan]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Pametni telefoni su postali sveprisutni.", "translation": "Смартфоны стали повсеместными."},
+        {"text": "Kafići su sveprisutni u ovom gradu.", "translation": "Кофейни повсюду в этом городе."}
       ]
     },
     {
@@ -139,8 +399,8 @@
       "transcription": "[prʲɪˈvʲet]",
       "part_of_speech": "interjection",
       "examples": [
-        "Привет! Как дела?",
-        "Он махнул рукой и сказал: «Привет!»"
+        {"text": "Привет! Как дела?", "translation": "Hello! How are you?"},
+        {"text": "Он махнул рукой и сказал: «Привет!»", "translation": "He waved and said: \"Hi!\""}
       ]
     },
     {
@@ -152,8 +412,60 @@
       "transcription": "[knʲɪˈɡa]",
       "part_of_speech": "noun",
       "examples": [
-        "Я читаю интересную книгу.",
-        "Эта книга лежит на столе."
+        {"text": "Я читаю интересную книгу.", "translation": "I am reading an interesting book."},
+        {"text": "Эта книга лежит на столе.", "translation": "This book is on the table."}
+      ]
+    },
+    {
+      "key": "ru_a1_вода",
+      "language": "ru",
+      "level": "A1",
+      "word": "вода",
+      "translation": "water",
+      "transcription": "[vɐˈda]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Я пью воду каждое утро.", "translation": "I drink water every morning."},
+        {"text": "Вода в озере холодная.", "translation": "The water in the lake is cold."}
+      ]
+    },
+    {
+      "key": "ru_a1_друг",
+      "language": "ru",
+      "level": "A1",
+      "word": "друг",
+      "translation": "friend",
+      "transcription": "[drug]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Он мой лучший друг.", "translation": "He is my best friend."},
+        {"text": "Вчера я встретил старого друга.", "translation": "I met an old friend yesterday."}
+      ]
+    },
+    {
+      "key": "ru_a1_дом",
+      "language": "ru",
+      "level": "A1",
+      "word": "дом",
+      "translation": "house, home",
+      "transcription": "[dom]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Они живут в маленьком доме.", "translation": "They live in a small house."},
+        {"text": "У нашего дома красивый сад.", "translation": "Our house has a beautiful garden."}
+      ]
+    },
+    {
+      "key": "ru_a2_время",
+      "language": "ru",
+      "level": "A2",
+      "word": "время",
+      "translation": "time",
+      "transcription": "[ˈvrʲemʲə]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "У меня сегодня мало времени.", "translation": "I don't have much time today."},
+        {"text": "Во сколько отправляется поезд?", "translation": "What time does the train leave?"}
       ]
     },
     {
@@ -165,8 +477,34 @@
       "transcription": "[putʲɪˈʂestvʲɪje]",
       "part_of_speech": "noun",
       "examples": [
-        "Наше путешествие длилось две недели.",
-        "Она мечтает о путешествии по Европе."
+        {"text": "Наше путешествие длилось две недели.", "translation": "Our journey lasted two weeks."},
+        {"text": "Она мечтает о путешествии по Европе.", "translation": "She dreams of a trip across Europe."}
+      ]
+    },
+    {
+      "key": "ru_a2_работа",
+      "language": "ru",
+      "level": "A2",
+      "word": "работа",
+      "translation": "work, job",
+      "transcription": "[rɐˈbotə]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "У меня много работы.", "translation": "I have a lot of work to do."},
+        {"text": "Она ездит на работу на автобусе.", "translation": "She goes to work by bus."}
+      ]
+    },
+    {
+      "key": "ru_a2_красивый",
+      "language": "ru",
+      "level": "A2",
+      "word": "красивый",
+      "translation": "beautiful, handsome",
+      "transcription": "[krɐˈsʲivɨj]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Какой прекрасный закат!", "translation": "What a beautiful sunset!"},
+        {"text": "У неё красивый голос.", "translation": "She has a beautiful voice."}
       ]
     },
     {
@@ -178,12 +516,77 @@
       "transcription": "[dəsʲtʲɪˈʐenʲɪje]",
       "part_of_speech": "noun",
       "examples": [
-        "Это важное достижение для нашей команды.",
-        "Его достижения в науке известны всем."
+        {"text": "Это важное достижение для нашей команды.", "translation": "This is an important achievement for our team."},
+        {"text": "Его достижения в науке известны всем.", "translation": "His achievements in science are well known."}
       ]
     },
     {
-      "key": "be_a1_привітанне",
+      "key": "ru_b1_опыт",
+      "language": "ru",
+      "level": "B1",
+      "word": "опыт",
+      "translation": "experience",
+      "transcription": "[ɐˈpɨt]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "У него десять лет опыта.", "translation": "He has ten years of experience."},
+        {"text": "Это был незабываемый опыт.", "translation": "It was an unforgettable experience."}
+      ]
+    },
+    {
+      "key": "ru_b2_неоднозначный",
+      "language": "ru",
+      "level": "B2",
+      "word": "неоднозначный",
+      "translation": "ambiguous, equivocal",
+      "transcription": "[nʲɪɐdnɐˈznaʂnɨj]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Его ответ был намеренно неоднозначным.", "translation": "His answer was deliberately ambiguous."},
+        {"text": "Инструкции были неоднозначными и запутанными.", "translation": "The instructions were ambiguous and confusing."}
+      ]
+    },
+    {
+      "key": "ru_b2_перспектива",
+      "language": "ru",
+      "level": "B2",
+      "word": "перспектива",
+      "translation": "perspective, outlook",
+      "transcription": "[pʲɪrspʲɪkˈtʲivə]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Попробуйте посмотреть на это с другой точки зрения.", "translation": "Try to see it from a different perspective."},
+        {"text": "Путешествия расширяют вашу перспективу.", "translation": "Travel broadens your perspective on life."}
+      ]
+    },
+    {
+      "key": "ru_c1_эфемерный",
+      "language": "ru",
+      "level": "C1",
+      "word": "эфемерный",
+      "translation": "ephemeral, fleeting",
+      "transcription": "[ɪfʲɪˈmʲernɨj]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Слава может быть эфемерной.", "translation": "Fame can be ephemeral."},
+        {"text": "Красота цветения сакуры эфемерна.", "translation": "The beauty of cherry blossoms is ephemeral."}
+      ]
+    },
+    {
+      "key": "ru_c1_повсеместный",
+      "language": "ru",
+      "level": "C1",
+      "word": "повсеместный",
+      "translation": "ubiquitous, widespread",
+      "transcription": "[pəfsʲɪˈmʲesnɨj]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Смартфоны стали повсеместными.", "translation": "Smartphones have become ubiquitous."},
+        {"text": "Кофейни повсюду в этом городе.", "translation": "Coffee shops are ubiquitous in this city."}
+      ]
+    },
+    {
+      "key": "be_a1_прывітанне",
       "language": "be",
       "level": "A1",
       "word": "прывітанне",
@@ -191,8 +594,8 @@
       "transcription": "[prɨvʲiˈtanʲnʲe]",
       "part_of_speech": "noun",
       "examples": [
-        "Прывітанне! Як справы?",
-        "Ён пакінуў прывітанне."
+        {"text": "Прывітанне! Як справы?", "translation": "Привет! Как дела?"},
+        {"text": "Ён пакінуў прывітанне.", "translation": "Он оставил приветствие."}
       ]
     },
     {
@@ -204,8 +607,60 @@
       "transcription": "[knʲiˈɣa]",
       "part_of_speech": "noun",
       "examples": [
-        "Я чытаю цікавую кнігу.",
-        "Гэта кніга на стале."
+        {"text": "Я чытаю цікавую кнігу.", "translation": "Я читаю интересную книгу."},
+        {"text": "Гэта кніга на стале.", "translation": "Эта книга на столе."}
+      ]
+    },
+    {
+      "key": "be_a1_вада",
+      "language": "be",
+      "level": "A1",
+      "word": "вада",
+      "translation": "вода",
+      "transcription": "[ˈvada]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Я п'ю ваду кожную раніцу.", "translation": "Я пью воду каждое утро."},
+        {"text": "Вада ў возеры халодная.", "translation": "Вода в озере холодная."}
+      ]
+    },
+    {
+      "key": "be_a1_сябар",
+      "language": "be",
+      "level": "A1",
+      "word": "сябар",
+      "translation": "друг, подруга",
+      "transcription": "[ˈsʲabar]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Ён мой лепшы сябар.", "translation": "Он мой лучший друг."},
+        {"text": "Учора я сустрэла старога сябра.", "translation": "Вчера я встретила старого друга."}
+      ]
+    },
+    {
+      "key": "be_a1_дом",
+      "language": "be",
+      "level": "A1",
+      "word": "дом",
+      "translation": "дом",
+      "transcription": "[dom]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Яны жывуць у маленькім доме.", "translation": "Они живут в маленьком доме."},
+        {"text": "У нашага дому прыгожы сад.", "translation": "У нашего дома красивый сад."}
+      ]
+    },
+    {
+      "key": "be_a2_час",
+      "language": "be",
+      "level": "A2",
+      "word": "час",
+      "translation": "время",
+      "transcription": "[tʂas]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "У мяне сёння мала часу.", "translation": "У меня сегодня мало времени."},
+        {"text": "У які час адпраўляецца цягнік?", "translation": "Во сколько отправляется поезд?"}
       ]
     },
     {
@@ -213,12 +668,38 @@
       "language": "be",
       "level": "A2",
       "word": "падарожжа",
-      "translation": "journey, trip",
+      "translation": "путешествие, поездка",
       "transcription": "[padaroˈʐʐa]",
       "part_of_speech": "noun",
       "examples": [
-        "Нашае падарожжа было цудоўным.",
-        "Я люблю падарожжы."
+        {"text": "Нашае падарожжа было цудоўным.", "translation": "Наше путешествие было прекрасным."},
+        {"text": "Я люблю падарожжы.", "translation": "Я люблю путешествия."}
+      ]
+    },
+    {
+      "key": "be_a2_праца",
+      "language": "be",
+      "level": "A2",
+      "word": "праца",
+      "translation": "работа, труд",
+      "transcription": "[ˈpratsa]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "У мяне шмат працы.", "translation": "У меня много работы."},
+        {"text": "Яна ездзіць на працу аўтобусам.", "translation": "Она ездит на работу на автобусе."}
+      ]
+    },
+    {
+      "key": "be_a2_прыгожы",
+      "language": "be",
+      "level": "A2",
+      "word": "прыгожы",
+      "translation": "красивый, прекрасный",
+      "transcription": "[prɨˈɣoʐɨ]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Які прыгожы захад сонца!", "translation": "Какой прекрасный закат!"},
+        {"text": "У яе прыгожы голас.", "translation": "У неё красивый голос."}
       ]
     },
     {
@@ -226,12 +707,77 @@
       "language": "be",
       "level": "B1",
       "word": "дасягненне",
-      "translation": "achievement",
+      "translation": "достижение",
       "transcription": "[dasʲaɣˈnʲenʲnʲe]",
       "part_of_speech": "noun",
       "examples": [
-        "Гэта вялікае дасягненне.",
-        "Яго дасягненні ў навуцы вядомыя."
+        {"text": "Гэта вялікае дасягненне.", "translation": "Это большое достижение."},
+        {"text": "Яго дасягненні ў навуцы вядомыя.", "translation": "Его достижения в науке известны."}
+      ]
+    },
+    {
+      "key": "be_b1_вопыт",
+      "language": "be",
+      "level": "B1",
+      "word": "вопыт",
+      "translation": "опыт, переживание",
+      "transcription": "[ˈvopɨt]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "У яго дзесяць гадоў вопыту.", "translation": "У него десять лет опыта."},
+        {"text": "Гэта быў незабыўны вопыт.", "translation": "Это был незабываемый опыт."}
+      ]
+    },
+    {
+      "key": "be_b2_двухзначны",
+      "language": "be",
+      "level": "B2",
+      "word": "двухзначны",
+      "translation": "двусмысленный, неоднозначный",
+      "transcription": "[dvuxˈznatʂnɨ]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Яго адказ быў наўмысна двухзначным.", "translation": "Его ответ был намеренно двусмысленным."},
+        {"text": "Інструкцыі былі двухзначнымі і блытлівымі.", "translation": "Инструкции были неоднозначными и запутанными."}
+      ]
+    },
+    {
+      "key": "be_b2_перспектыва",
+      "language": "be",
+      "level": "B2",
+      "word": "перспектыва",
+      "translation": "перспектива, точка зрения",
+      "transcription": "[pʲɛrspʲɛkˈtɨva]",
+      "part_of_speech": "noun",
+      "examples": [
+        {"text": "Паспрабуй паглядзець з іншай перспектывы.", "translation": "Попробуй посмотреть с другой точки зрения."},
+        {"text": "Падарожжы пашыраюць тваю перспектыву.", "translation": "Путешествия расширяют твою перспективу."}
+      ]
+    },
+    {
+      "key": "be_c1_эфемерны",
+      "language": "be",
+      "level": "C1",
+      "word": "эфемерны",
+      "translation": "эфемерный, мимолётный",
+      "transcription": "[ɛfʲɛˈmʲɛrnɨ]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Слава можа быць эфемернай.", "translation": "Слава может быть эфемерной."},
+        {"text": "Прыгажосць цвіцення сакуры эфемерная.", "translation": "Красота цветения сакуры эфемерна."}
+      ]
+    },
+    {
+      "key": "be_c1_ўсепрысутны",
+      "language": "be",
+      "level": "C1",
+      "word": "ўсепрысутны",
+      "translation": "повсеместный, вездесущий",
+      "transcription": "[wsʲɛprɨˈsutnɨ]",
+      "part_of_speech": "adjective",
+      "examples": [
+        {"text": "Смартфоны сталі ўсепрысутнымі.", "translation": "Смартфоны стали повсеместными."},
+        {"text": "Кавярні ўсепрысутныя ў гэтым горадзе.", "translation": "Кофейни повсюду в этом городе."}
       ]
     }
   ]

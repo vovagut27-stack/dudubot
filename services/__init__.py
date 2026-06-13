@@ -1,5 +1,5 @@
 """Сервисы приложения."""
 
-from services.word_service import WordEntry, WordService
+from services.word_service import ExampleEntry, WordEntry, WordService
 
-__all__ = ["WordEntry", "WordService"]
+__all__ = ["ExampleEntry", "WordEntry", "WordService"]

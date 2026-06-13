@@ -112,7 +112,7 @@ class DailyWordLog(Base):
 
     __tablename__ = "daily_word_logs"
     __table_args__ = (
-        UniqueConstraint("user_id", "sent_date", "language", name="uq_daily_word"),
+        UniqueConstraint("user_id", "sent_date", "word_key", name="uq_daily_word"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

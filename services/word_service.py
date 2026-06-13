@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
+class ExampleEntry:
+    """Пример предложения с переводом."""
+
+    text: str
+    translation: str
+
+
+@dataclass(frozen=True, slots=True)
 class WordEntry:
     """Структура одного слова из словаря."""
 
@@ -27,10 +35,21 @@ class WordEntry:
     translation: str
     transcription: str
     part_of_speech: str
-    examples: list[str]
+    examples: list[ExampleEntry]
 
     @classmethod
     def from_dict(cls, data: dict) -> "WordEntry":
+        examples: list[ExampleEntry] = []
+        for item in data.get("examples", []):
+            if isinstance(item, str):
+                examples.append(ExampleEntry(text=item, translation=""))
+            else:
+                examples.append(
+                    ExampleEntry(
+                        text=item["text"],
+                        translation=item.get("translation", ""),
+                    )
+                )
         return cls(
             key=data["key"],
             language=data["language"],
@@ -39,12 +58,12 @@ class WordEntry:
             translation=data["translation"],
             transcription=data.get("transcription", ""),
             part_of_speech=data.get("part_of_speech", ""),
-            examples=list(data.get("examples", [])),
+            examples=examples,
         )
 
 
 class WordService:
-    """Загружает слова из JSON и выбирает слово дня."""
+    """Загружает слова из JSON и выбирает слова дня."""
 
     def __init__(self, words_file: Path) -> None:
         self._words_file = words_file
@@ -102,21 +121,64 @@ class WordService:
         level: str,
         target_date: date | None = None,
         user_id: int | None = None,
+        slot: int = 0,
     ) -> WordEntry | None:
         """
-        Детерминированно выбирает слово дня.
+        Детерминированно выбирает одно слово.
 
-        Использует хеш от даты + языка + user_id для разнообразия у пользователей.
+        slot — порядковый номер слова за день (0, 1, 2…).
         """
         candidates = self.filter_words(language, level)
         if not candidates:
             return None
 
         target_date = target_date or date.today()
-        seed = f"{target_date.isoformat()}:{language}:{user_id or 0}"
+        seed = f"{target_date.isoformat()}:{language}:{user_id or 0}:{slot}"
         digest = hashlib.sha256(seed.encode()).hexdigest()
         index = int(digest, 16) % len(candidates)
         return candidates[index]
+
+    def pick_daily_words(
+        self,
+        languages: list[str],
+        level: str,
+        count: int,
+        target_date: date | None = None,
+        user_id: int | None = None,
+    ) -> list[WordEntry]:
+        """
+        Выбирает несколько уникальных слов на день.
+
+        Слова чередуются по языкам пользователя.
+        """
+        if count <= 0:
+            return []
+
+        langs = languages or ["en"]
+        target_date = target_date or date.today()
+        picked: list[WordEntry] = []
+        seen: set[str] = set()
+
+        slot = 0
+        max_attempts = count * len(langs) * 4
+        attempts = 0
+
+        while len(picked) < count and attempts < max_attempts:
+            lang = langs[slot % len(langs)]
+            word = self.pick_daily_word(
+                language=lang,
+                level=level,
+                target_date=target_date,
+                user_id=user_id,
+                slot=slot,
+            )
+            slot += 1
+            attempts += 1
+            if word and word.key not in seen:
+                seen.add(word.key)
+                picked.append(word)
+
+        return picked
 
     def pick_quiz_options(
         self,
@@ -131,7 +193,6 @@ class WordService:
             for w in self.filter_words(language, level)
             if w.key != correct.key and w.translation != correct.translation
         ]
-        # Детерминированный выбор «неправильных» ответов
         seed = correct.key
         digest = hashlib.md5(seed.encode()).hexdigest()
         start = int(digest[:8], 16) % max(len(others), 1) if others else 0
@@ -145,13 +206,24 @@ class WordService:
         return wrong
 
     @staticmethod
-    def format_word_message(word: WordEntry, *, header: str | None = None) -> str:
+    def format_word_message(
+        word: WordEntry,
+        *,
+        header: str | None = None,
+        index: int | None = None,
+        total: int | None = None,
+    ) -> str:
         """Форматирует красивое сообщение со словом."""
         lang_name = SUPPORTED_LANGUAGES.get(word.language, word.language)
-        title = header or "📚 Слово дня"
+        if header:
+            title = header
+        elif index and total:
+            title = f"📚 Слово {index}/{total}"
+        else:
+            title = "📚 Слово дня"
 
         lines = [
-            f"{title}",
+            title,
             "",
             f"🌍 {lang_name} · 📊 {word.level}",
             "",
@@ -166,13 +238,16 @@ class WordService:
 
     @staticmethod
     def format_examples(word: WordEntry) -> str:
-        """Форматирует примеры использования слова."""
+        """Форматирует примеры с переводами."""
         if not word.examples:
             return "😔 Примеры для этого слова пока не добавлены."
 
         lines = [f"💬 Примеры — <b>{word.word}</b>", ""]
         for i, example in enumerate(word.examples, 1):
-            lines.append(f"{i}. <i>{example}</i>")
+            lines.append(f"{i}. <i>{example.text}</i>")
+            if example.translation:
+                flag = "🌐" if word.language != "ru" else "🇬🇧"
+                lines.append(f"   {flag} {example.translation}")
         return "\n".join(lines)
 
     @staticmethod

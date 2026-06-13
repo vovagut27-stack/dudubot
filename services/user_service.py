@@ -10,6 +10,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import DAILY_WORDS_FREE, DAILY_WORDS_PREMIUM
 from models.models import (
     DailyWordLog,
     PaymentLog,
@@ -161,7 +162,7 @@ class UserService:
             select(DailyWordLog).where(
                 DailyWordLog.user_id == user.id,
                 DailyWordLog.sent_date == sent_date,
-                DailyWordLog.language == language,
+                DailyWordLog.word_key == word_key,
             )
         )
         log = result.scalar_one_or_none()
@@ -175,9 +176,14 @@ class UserService:
             )
             self._session.add(log)
         else:
-            log.word_key = word_key
             log.message_id = message_id
         return log
+
+    def get_daily_word_limit(self, user: User) -> int:
+        """Лимит слов в день: 3 free / 10 premium."""
+        if self.is_premium_active(user):
+            return DAILY_WORDS_PREMIUM
+        return DAILY_WORDS_FREE
 
     async def get_today_words(self, user: User, target_date: date | None = None) -> list[DailyWordLog]:
         """Возвращает слова, отправленные сегодня."""

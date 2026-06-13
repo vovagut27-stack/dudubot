@@ -35,6 +35,10 @@ STAR_SUBSCRIPTION_PERIOD = 2_592_000
 # Ссылка на поддержку проекта
 SUPPORT_URL = "https://donatty.com/creator_bots"
 
+# Слов в день: бесплатно / Premium
+DAILY_WORDS_FREE = 3
+DAILY_WORDS_PREMIUM = 10
+
 
 def normalize_database_url(url: str) -> str:
     """

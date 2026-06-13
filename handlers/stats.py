@@ -11,7 +11,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import SUPPORTED_LANGUAGES
+from config import DAILY_WORDS_FREE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from services.word_service import WordService
 
@@ -50,6 +50,7 @@ async def cmd_stats(
         SUPPORTED_LANGUAGES.get(c, c) for c in user.language_list()
     )
     premium = "⭐ Premium" if user_service.is_premium_active(user) else "🆓 Free"
+    daily_limit = user_service.get_daily_word_limit(user)
 
     text = (
         "📊 <b>Ваша статистика</b>\n\n"
@@ -59,6 +60,8 @@ async def cmd_stats(
         f"🔥 Streak: <b>{user.streak}</b> дн.\n"
         f"🌟 Лучший streak: <b>{user.best_streak}</b> дн.\n"
         f"📚 Выучено слов: <b>{user.words_learned}</b>\n\n"
+        f"📬 Слов в день: <b>{daily_limit}</b> "
+        f"(Free {DAILY_WORDS_FREE} · Premium {DAILY_WORDS_PREMIUM})\n"
         f"📊 CEFR: <b>{user.level}</b>\n"
         f"🌍 Языки: {langs}\n"
         f"🕐 Уведомления: <b>{user.notification_time.strftime('%H:%M')}</b>\n"

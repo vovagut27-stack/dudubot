@@ -12,7 +12,7 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import SUPPORTED_LANGUAGES
+from config import DAILY_WORDS_FREE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
 from models.models import User, WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
@@ -31,33 +31,53 @@ async def send_daily_word_to_user(
     target_date: date | None = None,
 ) -> None:
     """
-    Отправляет слово дня по всем языкам пользователя.
+    Отправляет слова дня пользователю.
 
-    Используется и в /today, и в планировщике.
+    Free: 3 слова · Premium: 10 слов (распределены по выбранным языкам).
     """
     target_date = target_date or date.today()
     languages = user.language_list() or ["en"]
+    is_premium = user_service.is_premium_active(user)
+    limit = DAILY_WORDS_PREMIUM if is_premium else DAILY_WORDS_FREE
 
-    for lang in languages:
-        word = word_service.pick_daily_word(
-            language=lang,
-            level=user.level,
-            target_date=target_date,
-            user_id=user.telegram_id,
+    words = word_service.pick_daily_words(
+        languages=languages,
+        level=user.level,
+        count=limit,
+        target_date=target_date,
+        user_id=user.telegram_id,
+    )
+
+    if not words:
+        logger.warning("Нет слов для user=%s langs=%s", user.telegram_id, languages)
+        await bot.send_message(
+            user.telegram_id,
+            "😔 Не удалось подобрать слова. Попробуйте позже или смените уровень в /settings",
         )
-        if word is None:
-            logger.warning("Нет слов для lang=%s level=%s", lang, user.level)
-            continue
+        return
 
+    plan = "⭐ Premium" if is_premium else f"🆓 Free ({DAILY_WORDS_FREE} слова/день)"
+    await bot.send_message(
+        chat_id=user.telegram_id,
+        text=(
+            f"📬 <b>Слова дня</b> — {len(words)} из {limit}\n"
+            f"{plan}\n"
+            + ("" if is_premium else f"\n💡 Premium = <b>{DAILY_WORDS_PREMIUM} слов</b> /premium")
+        ),
+    )
+
+    for idx, word in enumerate(words, start=1):
         progress = await user_service.get_word_progress(user.id, word.key)
         in_dict = progress is not None and progress.status in (
             WordStatus.FAVORITE.value,
             WordStatus.LEARNED.value,
         )
 
-        lang_label = SUPPORTED_LANGUAGES.get(lang, lang)
-        header = f"📬 Слово дня · {lang_label}"
-        text = word_service.format_word_message(word, header=header)
+        lang_label = SUPPORTED_LANGUAGES.get(word.language, word.language)
+        header = f"📚 {idx}/{len(words)} · {lang_label}"
+        text = word_service.format_word_message(
+            word, header=header, index=idx, total=len(words)
+        )
 
         msg = await bot.send_message(
             chat_id=user.telegram_id,
@@ -67,7 +87,7 @@ async def send_daily_word_to_user(
         await user_service.log_daily_word(
             user=user,
             word_key=word.key,
-            language=lang,
+            language=word.language,
             sent_date=target_date,
             message_id=msg.message_id,
         )
