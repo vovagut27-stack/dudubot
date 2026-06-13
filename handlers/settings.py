@@ -239,7 +239,7 @@ async def settings_set_ui(callback: CallbackQuery, session: AsyncSession) -> Non
     ui = user.ui_language
     lang_name = UI_LANGUAGES.get(ui, ui)
 
-    await callback.answer(t(ui, "settings_ui_saved", lang=lang_name))
+    await callback.answer(t(ui, "settings_ui_saved", ui_name=lang_name))
     await callback.message.edit_text(
         _settings_text(user),
         reply_markup=settings_keyboard(ui),
