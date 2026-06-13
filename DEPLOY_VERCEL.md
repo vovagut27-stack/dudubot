@@ -221,6 +221,28 @@ Vercel **автоматически** пересоберёт проект за 1
 
 ## Частые ошибки
 
+### «No Production Deployment» / домен не работает
+
+Это значит: **ни один деплой не завершился успешно**. Сделайте по порядку:
+
+1. **Vercel → Project → Settings → Git**
+   - Production Branch = **`main`**
+   - Connected Git Repository = `vovagut27-stack/dudubot`
+
+2. **Settings → Environment Variables** — все переменные заданы (см. таблицу выше)
+
+3. **Deployments → Create Deployment**
+   - Branch: `main`
+   - Нажмите **Deploy**
+
+4. Откройте **последний деплой** → вкладка **Build Logs**
+   - Если **Failed** — скопируйте ошибку (часто: нет `TURSO_AUTH_TOKEN` или ошибка `pip install`)
+
+5. После **Ready** откройте:
+   ```
+   https://ваш-проект.vercel.app
+   ```
+
 ### Бот не отвечает в Telegram
 - Проверьте, что выполнили **Шаг 5** (`/api/setup`)
 - Проверьте `BOT_TOKEN` в Vercel → Settings → Environment Variables
