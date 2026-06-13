@@ -21,8 +21,11 @@ logger = logging.getLogger(__name__)
 
 async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, str]:
     """Обрабатывает входящий update от Telegram."""
+    import time
+
     from bootstrap import get_application
 
+    t0 = time.perf_counter()
     expected_secret = os.getenv("WEBHOOK_SECRET", "")
     if expected_secret and secret_header != expected_secret:
         logger.warning("Webhook 403: неверный WEBHOOK_SECRET")
@@ -33,10 +36,19 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
     except json.JSONDecodeError:
         return 400, "Invalid JSON"
 
+    update_id = payload.get("update_id")
+    logger.info("Webhook update_id=%s", update_id)
+
     bot, dp, _, _ = await get_application()
+    logger.info("Webhook init %.0f ms update_id=%s", (time.perf_counter() - t0) * 1000, update_id)
     try:
         update = Update.model_validate(payload, context={"bot": bot})
         await dp.feed_update(bot, update)
+        logger.info(
+            "Webhook ok %.0f ms update_id=%s",
+            (time.perf_counter() - t0) * 1000,
+            update_id,
+        )
         return 200, "OK"
     finally:
         # На Vercel закрываем сессию после каждого запроса

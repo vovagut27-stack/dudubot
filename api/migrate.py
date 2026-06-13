@@ -17,16 +17,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 async def _run_migrate() -> dict:
     from bootstrap import ensure_database
     from config import get_settings
-    from database import migrate_schema, turso_sync_engine, use_sync_sessions, engine
+    from database import prepare_schema, turso_sync_engine, use_sync_sessions, engine
 
     settings = get_settings()
     await ensure_database(settings)
 
     applied: list[str] = []
     if use_sync_sessions and turso_sync_engine is not None:
-        applied = await asyncio.to_thread(migrate_schema, turso_sync_engine)
+        applied = await asyncio.to_thread(prepare_schema, turso_sync_engine)
     elif engine is not None:
-        applied = await asyncio.to_thread(migrate_schema, engine)
+        applied = await asyncio.to_thread(prepare_schema, engine)
 
     return {"ok": True, "applied": applied}
 

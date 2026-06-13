@@ -223,13 +223,27 @@ def _run_schema_patches(conn) -> list[str]:
     return applied
 
 
-def migrate_schema(bind) -> list[str]:
+def prepare_schema(bind) -> list[str]:
     """
-    Добавляет новые колонки в существующие таблицы (Turso/SQLite).
+    Создаёт таблицы (если их нет) и применяет миграции колонок.
 
-    DDL выполняется в AUTOCOMMIT — иначе ALTER на Turso/Hrana может не сохраниться
-    внутри транзакции engine.begin().
+    Одно соединение + AUTOCOMMIT — минимум round-trip к Turso на cold start.
     """
+    from sqlalchemy.engine import Engine
+
+    from models.models import Base
+
+    engine = bind if isinstance(bind, Engine) else bind.engine
+
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        if not _table_exists(conn, "users"):
+            Base.metadata.create_all(bind=conn)
+            logger.info("Created database tables")
+        return _run_schema_patches(conn)
+
+
+def migrate_schema(bind) -> list[str]:
+    """Добавляет новые колонки в существующие таблицы (Turso/SQLite)."""
     from sqlalchemy.engine import Engine
 
     engine = bind if isinstance(bind, Engine) else bind.engine

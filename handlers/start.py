@@ -8,6 +8,7 @@ import logging
 from datetime import time
 
 from aiogram import F, Router
+from aiogram.enums import ChatAction
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -50,17 +51,35 @@ def _welcome_text(ui_lang: str = "ru") -> str:
 @router.message(CommandStart())
 async def cmd_start(message: Message, session: AsyncSession, state: FSMContext) -> None:
     """Приветствие и начало онбординга или главное меню."""
-    user_service = UserService(session)
-    user = await user_service.get_or_create(
-        telegram_id=message.from_user.id,
-        username=message.from_user.username,
-        first_name=message.from_user.first_name,
-    )
+    if not message.from_user:
+        return
 
-    ui = normalize_ui_language(user.ui_language)
+    await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
 
-    if user.onboarding_completed:
-        name = h(message.from_user.first_name) or "друг"
+    ui = "ru"
+    onboarding_done = False
+    name = h(message.from_user.first_name) if message.from_user.first_name else "друг"
+
+    try:
+        user_service = UserService(session)
+        user = await user_service.get_or_create(
+            telegram_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name,
+        )
+        ui = normalize_ui_language(user.ui_language)
+        onboarding_done = user.onboarding_completed
+    except Exception:
+        logger.exception("Ошибка БД при /start user=%s", message.from_user.id)
+        await state.set_state(OnboardingStates.level)
+        await message.answer(
+            "👋 Добро пожаловать в «Слово Дня»!\n\nВыберите уровень:",
+            reply_markup=onboarding_level_keyboard(),
+            parse_mode=None,
+        )
+        return
+
+    if onboarding_done:
         await message.answer(
             t(ui, "welcome_back", name=name),
             reply_markup=main_menu_keyboard(ui),

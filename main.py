@@ -53,13 +53,10 @@ async def main() -> None:
     init_db(settings)
 
     # Создаём таблицы при первом запуске (для prod используйте alembic upgrade head)
-    from models.models import Base
-    from database import engine, migrate_schema
+    from database import engine, prepare_schema
 
     if engine is not None:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        applied = await asyncio.to_thread(migrate_schema, engine)
+        applied = await asyncio.to_thread(prepare_schema, engine)
         if applied:
             logger.info("Schema migrations applied: %s", ", ".join(applied))
 

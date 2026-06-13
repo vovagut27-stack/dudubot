@@ -13,7 +13,6 @@ from aiogram.types import BotCommand
 from bot import create_bot, create_dispatcher
 from config import Settings, get_settings
 from database import init_db
-from models.models import Base
 from services.word_service import WordService
 
 logger = logging.getLogger(__name__)
@@ -25,12 +24,30 @@ _schema_ready = False
 _dispatcher = None
 
 
+class _LazyWordService:
+    """Загружает words.json только при первом обращении (/start этого не требует)."""
+
+    __slots__ = ("_path", "_impl")
+
+    def __init__(self, path) -> None:
+        self._path = path
+        self._impl: WordService | None = None
+
+    def _load(self) -> WordService:
+        if self._impl is None:
+            self._impl = WordService(self._path)
+        return self._impl
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._load(), name)
+
+
 async def ensure_database(settings: Settings) -> None:
     """Инициализирует БД и создаёт таблицы при первом запуске."""
     global _db_ready, _schema_ready
     import asyncio
 
-    from database import engine, migrate_schema, turso_sync_engine, use_sync_sessions
+    from database import engine, prepare_schema, turso_sync_engine, use_sync_sessions
 
     if not _db_ready:
         init_db(settings)
@@ -40,17 +57,14 @@ async def ensure_database(settings: Settings) -> None:
         return
 
     if use_sync_sessions and turso_sync_engine is not None:
-        await asyncio.to_thread(Base.metadata.create_all, turso_sync_engine)
-        applied = await asyncio.to_thread(migrate_schema, turso_sync_engine)
+        applied = await asyncio.to_thread(prepare_schema, turso_sync_engine)
         if applied:
             logger.info("Schema migrations applied: %s", ", ".join(applied))
         _schema_ready = True
         return
 
     if engine is not None:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        applied = await asyncio.to_thread(migrate_schema, engine)
+        applied = await asyncio.to_thread(prepare_schema, engine)
         if applied:
             logger.info("Schema migrations applied: %s", ", ".join(applied))
         _schema_ready = True
@@ -96,7 +110,7 @@ async def get_application() -> tuple[Any, Any, WordService, Settings]:
 
     word_service = _cache.get("word_service")
     if word_service is None:
-        word_service = WordService(settings.words_file)
+        word_service = _LazyWordService(settings.words_file)
         _cache["word_service"] = word_service
         _cache["settings"] = settings
 
