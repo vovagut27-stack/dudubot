@@ -32,6 +32,8 @@ async def _check() -> dict:
         or os.getenv("VERCEL_PROJECT_PRODUCTION_URL")
         or os.getenv("VERCEL_URL")
     )
+    if production_url and not production_url.startswith("https://"):
+        production_url = f"https://{production_url}"
     checks["production_url"] = production_url or "NOT SET"
 
     if not checks["BOT_TOKEN"]:
@@ -57,7 +59,7 @@ async def _check() -> dict:
             result["ok"] = False
             result["hint"] = (
                 f"Webhook не зарегистрирован! Откройте: "
-                f"https://{production_url}/api/setup?secret=ВАШ_SETUP_SECRET"
+                f"{production_url}/api/setup?secret=ВАШ_SETUP_SECRET"
             )
         await bot.session.close()
     except Exception as exc:

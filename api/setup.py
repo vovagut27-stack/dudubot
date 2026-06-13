@@ -16,16 +16,15 @@ from aiogram.types import WebhookInfo
 
 
 async def _setup_webhook() -> dict:
-    from bootstrap import get_application, set_bot_commands
+    """Регистрирует webhook — БД не нужна."""
+    from bot import create_bot
+    from bootstrap import set_bot_commands
+    from config import get_settings
 
-    settings_secret = os.getenv("SETUP_SECRET", "")
-    if not settings_secret:
-        raise ValueError("SETUP_SECRET не задан в переменных окружения Vercel")
-
-    bot, _, _, settings = await get_application()
+    settings = get_settings()
+    bot = create_bot(settings)
     await set_bot_commands(bot)
 
-    # Production URL — важно для webhook (не preview-деплой)
     vercel_url = (
         os.getenv("WEBHOOK_BASE_URL")
         or os.getenv("VERCEL_PROJECT_PRODUCTION_URL")
@@ -34,7 +33,7 @@ async def _setup_webhook() -> dict:
     )
     if not vercel_url:
         raise ValueError(
-            "Задайте WEBHOOK_BASE_URL=https://ваш-проект.vercel.app в Vercel env"
+            "Задайте WEBHOOK_BASE_URL=https://dudubot-ten.vercel.app в Vercel env"
         )
 
     if not vercel_url.startswith("https://"):
@@ -50,6 +49,8 @@ async def _setup_webhook() -> dict:
     )
 
     info: WebhookInfo = await bot.get_webhook_info()
+    await bot.session.close()
+
     return {
         "webhook_url": webhook_url,
         "telegram_url": info.url,

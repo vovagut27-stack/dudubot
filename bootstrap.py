@@ -25,11 +25,17 @@ _db_ready = False
 async def ensure_database(settings: Settings) -> None:
     """Инициализирует БД и создаёт таблицы при первом запуске."""
     global _db_ready
-    from database import engine
+    import asyncio
+
+    from database import engine, turso_sync_engine, use_sync_sessions
 
     if not _db_ready:
         init_db(settings)
         _db_ready = True
+
+    if use_sync_sessions and turso_sync_engine is not None:
+        await asyncio.to_thread(Base.metadata.create_all, turso_sync_engine)
+        return
 
     if engine is not None:
         async with engine.begin() as conn:

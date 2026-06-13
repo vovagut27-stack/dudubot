@@ -8,9 +8,8 @@ from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import async_session_factory
+from database import get_session
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -22,15 +21,7 @@ class DatabaseMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        if async_session_factory is None:
-            raise RuntimeError("База данных не инициализирована")
-
-        async with async_session_factory() as session:
+        async for session in get_session():
             data["session"] = session
-            try:
-                result = await handler(event, data)
-                await session.commit()
-                return result
-            except Exception:
-                await session.rollback()
-                raise
+            return await handler(event, data)
+        return None
