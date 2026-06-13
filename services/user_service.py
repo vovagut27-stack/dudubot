@@ -156,7 +156,7 @@ class UserService:
         language: str,
         sent_date: date,
         message_id: int | None = None,
-    ) -> DailyWordLog:
+    ) -> DailyWordLog | None:
         """Сохраняет отправленное слово дня."""
         result = await self._session.execute(
             select(DailyWordLog).where(
@@ -166,17 +166,32 @@ class UserService:
             )
         )
         log = result.scalar_one_or_none()
-        if log is None:
-            log = DailyWordLog(
-                user_id=user.id,
-                word_key=word_key,
-                language=language,
-                sent_date=sent_date,
-                message_id=message_id,
-            )
-            self._session.add(log)
-        else:
+        if log is not None:
             log.message_id = message_id
+            return log
+
+        # Старая схема БД: UNIQUE(user_id, sent_date, language) — одна запись на язык
+        legacy = await self._session.execute(
+            select(DailyWordLog).where(
+                DailyWordLog.user_id == user.id,
+                DailyWordLog.sent_date == sent_date,
+                DailyWordLog.language == language,
+            )
+        )
+        legacy_log = legacy.scalar_one_or_none()
+        if legacy_log is not None:
+            legacy_log.word_key = word_key
+            legacy_log.message_id = message_id
+            return legacy_log
+
+        log = DailyWordLog(
+            user_id=user.id,
+            word_key=word_key,
+            language=language,
+            sent_date=sent_date,
+            message_id=message_id,
+        )
+        self._session.add(log)
         return log
 
     def get_daily_word_limit(self, user: User) -> int:

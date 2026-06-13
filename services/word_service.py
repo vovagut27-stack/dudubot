@@ -12,6 +12,7 @@ from datetime import date
 from pathlib import Path
 
 from config import CEFR_LEVELS, SUPPORTED_LANGUAGES
+from utils.html_escape import h
 
 logger = logging.getLogger(__name__)
 
@@ -240,12 +241,12 @@ class WordService:
             "",
             f"🌍 {lang_name} · 📊 {word.level}",
             "",
-            f"🔤 <b>{word.word}</b>",
-            f"🔊 {word.transcription}" if word.transcription else "",
-            f"📖 {word.translation}",
+            f"🔤 <b>{h(word.word)}</b>",
+            f"🔊 {h(word.transcription)}" if word.transcription else "",
+            f"📖 {h(word.translation)}",
         ]
         if word.part_of_speech:
-            lines.append(f"🏷 {word.part_of_speech}")
+            lines.append(f"🏷 {h(word.part_of_speech)}")
 
         return "\n".join(line for line in lines if line)
 
@@ -255,12 +256,12 @@ class WordService:
         if not word.examples:
             return "😔 Примеры для этого слова пока не добавлены."
 
-        lines = [f"💬 Примеры — <b>{word.word}</b>", ""]
+        lines = [f"💬 Примеры — <b>{h(word.word)}</b>", ""]
         for i, example in enumerate(word.examples, 1):
-            lines.append(f"{i}. <i>{example.text}</i>")
+            lines.append(f"{i}. <i>{h(example.text)}</i>")
             if example.translation:
                 flag = "🌐" if word.language != "ru" else "🇬🇧"
-                lines.append(f"   {flag} {example.translation}")
+                lines.append(f"   {flag} {h(example.translation)}")
         return "\n".join(lines)
 
     @staticmethod

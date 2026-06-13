@@ -10,15 +10,39 @@ from level_vocab import LEVEL_VOCAB
 
 OUTPUT = Path(__file__).resolve().parent.parent / "data" / "words.json"
 LANGS = ("en", "de", "it", "sr", "ru", "be")
-EN_TR = {"ru", "be"}
 LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
+NATIVE_TR = {"ru", "be"}
 
 
-def ex_foreign(lang: str, word: str, tr: str) -> list[dict[str, str]]:
+def ex_en(word: str, tr: str) -> list[dict[str, str]]:
     t = tr.split(",")[0].strip()
     return [
+        {"text": f'I know the word "{word}".', "translation": f"Я знаю слово «{t}»."},
         {"text": f"This is {word}.", "translation": f"Это {t}."},
-        {"text": f"I need {word}.", "translation": f"Мне нужно: {t}."},
+    ]
+
+
+def ex_de(word: str, tr: str) -> list[dict[str, str]]:
+    t = tr.split(",")[0].strip()
+    return [
+        {"text": f'Ich kenne das Wort „{word}".', "translation": f"Я знаю слово «{t}»."},
+        {"text": f"Das ist {word}.", "translation": f"Это {t}."},
+    ]
+
+
+def ex_it(word: str, tr: str) -> list[dict[str, str]]:
+    t = tr.split(",")[0].strip()
+    return [
+        {"text": f'Conosco la parola «{word}».', "translation": f"Я знаю слово «{t}»."},
+        {"text": f"Questo è {word}.", "translation": f"Это {t}."},
+    ]
+
+
+def ex_sr(word: str, tr: str) -> list[dict[str, str]]:
+    t = tr.split(",")[0].strip()
+    return [
+        {"text": f'Znam reč „{word}".', "translation": f"Я знаю слово «{t}»."},
+        {"text": f"To je {word}.", "translation": f"Это {t}."},
     ]
 
 
@@ -30,6 +54,16 @@ def ex_native(word: str, tr: str) -> list[dict[str, str]]:
     ]
 
 
+EXAMPLE_BUILDERS = {
+    "en": ex_en,
+    "de": ex_de,
+    "it": ex_it,
+    "sr": ex_sr,
+    "ru": ex_native,
+    "be": ex_native,
+}
+
+
 def build() -> list[dict]:
     words: list[dict] = []
     for level in LEVELS:
@@ -37,7 +71,7 @@ def build() -> list[dict]:
             for lang in LANGS:
                 word, tr = forms[lang]
                 key = f"{lang}_{level.lower()}_{concept}"
-                examples = ex_native(word, tr) if lang in EN_TR else ex_foreign(lang, word, tr)
+                examples = EXAMPLE_BUILDERS[lang](word, tr)
                 words.append(
                     {
                         "key": key,

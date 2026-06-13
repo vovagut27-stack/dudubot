@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import date
 
@@ -68,30 +69,39 @@ async def send_daily_word_to_user(
     )
 
     for idx, word in enumerate(words, start=1):
-        progress = await user_service.get_word_progress(user.id, word.key)
-        in_dict = progress is not None and progress.status in (
-            WordStatus.FAVORITE.value,
-            WordStatus.LEARNED.value,
-        )
+        try:
+            progress = await user_service.get_word_progress(user.id, word.key)
+            in_dict = progress is not None and progress.status in (
+                WordStatus.FAVORITE.value,
+                WordStatus.LEARNED.value,
+            )
 
-        lang_label = SUPPORTED_LANGUAGES.get(word.language, word.language)
-        header = f"📚 {idx}/{len(words)} · {lang_label}"
-        text = word_service.format_word_message(
-            word, header=header, index=idx, total=len(words)
-        )
+            lang_label = SUPPORTED_LANGUAGES.get(word.language, word.language)
+            header = f"📚 {idx}/{len(words)} · {lang_label}"
+            text = word_service.format_word_message(
+                word, header=header, index=idx, total=len(words)
+            )
 
-        msg = await bot.send_message(
-            chat_id=user.telegram_id,
-            text=text,
-            reply_markup=word_actions_keyboard(word.key, in_dictionary=in_dict),
-        )
-        await user_service.log_daily_word(
-            user=user,
-            word_key=word.key,
-            language=word.language,
-            sent_date=target_date,
-            message_id=msg.message_id,
-        )
+            msg = await bot.send_message(
+                chat_id=user.telegram_id,
+                text=text,
+                reply_markup=word_actions_keyboard(word.key, in_dictionary=in_dict),
+            )
+            await user_service.log_daily_word(
+                user=user,
+                word_key=word.key,
+                language=word.language,
+                sent_date=target_date,
+                message_id=msg.message_id,
+            )
+            if idx < len(words):
+                await asyncio.sleep(0.15)
+        except Exception:
+            logger.exception(
+                "Не удалось отправить слово %s user=%s",
+                word.key,
+                user.telegram_id,
+            )
 
 
 async def _send_today_words(
