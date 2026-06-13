@@ -17,11 +17,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 async def _test_db() -> dict:
     from bootstrap import ensure_database
     from config import get_settings
-    from database import init_db, session_scope
+    from database import session_scope
     from services.user_service import UserService
 
     settings = get_settings()
-    init_db(settings)
     await ensure_database(settings)
 
     async with session_scope() as session:

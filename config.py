@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import functools
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -136,7 +137,12 @@ class Settings:
 
 
 def get_settings() -> Settings:
-    """Возвращает проверенный объект настроек."""
+    """Возвращает проверенный объект настроек (кэш на время жизни процесса)."""
+    return _cached_settings()
+
+
+@functools.lru_cache(maxsize=1)
+def _cached_settings() -> Settings:
     settings = Settings.from_env()
     settings.validate()
     return settings

@@ -20,13 +20,14 @@ logger = logging.getLogger(__name__)
 
 _cache: dict[str, Any] = {}
 _db_ready = False
+_schema_ready = False
 # Dispatcher создаётся один раз — роутеры нельзя подключать повторно
 _dispatcher = None
 
 
 async def ensure_database(settings: Settings) -> None:
     """Инициализирует БД и создаёт таблицы при первом запуске."""
-    global _db_ready
+    global _db_ready, _schema_ready
     import asyncio
 
     from database import engine, migrate_schema, turso_sync_engine, use_sync_sessions
@@ -35,11 +36,15 @@ async def ensure_database(settings: Settings) -> None:
         init_db(settings)
         _db_ready = True
 
+    if _schema_ready:
+        return
+
     if use_sync_sessions and turso_sync_engine is not None:
         await asyncio.to_thread(Base.metadata.create_all, turso_sync_engine)
         applied = await asyncio.to_thread(migrate_schema, turso_sync_engine)
         if applied:
             logger.info("Schema migrations applied: %s", ", ".join(applied))
+        _schema_ready = True
         return
 
     if engine is not None:
@@ -48,6 +53,7 @@ async def ensure_database(settings: Settings) -> None:
         applied = await asyncio.to_thread(migrate_schema, engine)
         if applied:
             logger.info("Schema migrations applied: %s", ", ".join(applied))
+        _schema_ready = True
 
 
 async def set_bot_commands(bot) -> None:
@@ -77,17 +83,23 @@ async def get_application() -> tuple[Any, Any, WordService, Settings]:
     """
     Возвращает (bot, dispatcher, word_service, settings).
 
-    На Vercel: новый Bot на каждый запрос, Dispatcher — singleton.
+    На Vercel: Bot создаётся на запрос (сессия закрывается после webhook),
+    словарь и схема БД кэшируются между запросами в одном инстансе.
     """
     is_vercel = bool(os.getenv("VERCEL"))
 
     if not is_vercel and "bot" in _cache:
         return _cache["bot"], _cache["dp"], _cache["word_service"], _cache["settings"]
 
-    settings = get_settings()
+    settings = _cache.get("settings") or get_settings()
     await ensure_database(settings)
 
-    word_service = WordService(settings.words_file)
+    word_service = _cache.get("word_service")
+    if word_service is None:
+        word_service = WordService(settings.words_file)
+        _cache["word_service"] = word_service
+        _cache["settings"] = settings
+
     bot = create_bot(settings)
     dp = _get_dispatcher()
     dp.workflow_data.update(settings=settings, word_service=word_service)

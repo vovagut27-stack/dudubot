@@ -68,6 +68,8 @@ class WordService:
     def __init__(self, words_file: Path) -> None:
         self._words_file = words_file
         self._words: list[WordEntry] = []
+        self._by_key: dict[str, WordEntry] = {}
+        self._by_lang_level: dict[tuple[str, str], list[WordEntry]] = {}
         self.reload()
 
     def reload(self) -> None:
@@ -76,20 +78,32 @@ class WordService:
             with self._words_file.open(encoding="utf-8") as f:
                 raw = json.load(f)
             self._words = [WordEntry.from_dict(w) for w in raw.get("words", [])]
+            self._rebuild_indexes()
             logger.info("Загружено %d слов из %s", len(self._words), self._words_file)
         except FileNotFoundError:
             logger.error("Файл слов не найден: %s", self._words_file)
             self._words = []
+            self._by_key = {}
+            self._by_lang_level = {}
         except json.JSONDecodeError as exc:
             logger.exception("Ошибка парсинга words.json: %s", exc)
             self._words = []
+            self._by_key = {}
+            self._by_lang_level = {}
+
+    def _rebuild_indexes(self) -> None:
+        by_key: dict[str, WordEntry] = {}
+        by_lang_level: dict[tuple[str, str], list[WordEntry]] = {}
+        for word in self._words:
+            by_key[word.key] = word
+            bucket = by_lang_level.setdefault((word.language, word.level), [])
+            bucket.append(word)
+        self._by_key = by_key
+        self._by_lang_level = by_lang_level
 
     def get_by_key(self, word_key: str) -> WordEntry | None:
         """Находит слово по уникальному ключу."""
-        for word in self._words:
-            if word.key == word_key:
-                return word
-        return None
+        return self._by_key.get(word_key)
 
     def filter_words(
         self,
@@ -105,15 +119,14 @@ class WordService:
         """
         if max_level:
             level_idx = CEFR_LEVELS.index(level) if level in CEFR_LEVELS else 0
-            allowed_levels = set(CEFR_LEVELS[: level_idx + 1])
+            allowed_levels = CEFR_LEVELS[: level_idx + 1]
         else:
-            allowed_levels = {level}
+            allowed_levels = (level,)
 
-        return [
-            w
-            for w in self._words
-            if w.language == language and w.level in allowed_levels
-        ]
+        result: list[WordEntry] = []
+        for lvl in allowed_levels:
+            result.extend(self._by_lang_level.get((language, lvl), []))
+        return result
 
     def pick_daily_word(
         self,
