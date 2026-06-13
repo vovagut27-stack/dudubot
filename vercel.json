@@ -11,6 +11,9 @@
     "api/health.py": {
       "maxDuration": 15
     },
+    "api/test_db.py": {
+      "maxDuration": 30
+    },
     "api/webhook.py": {
       "maxDuration": 60
     },
