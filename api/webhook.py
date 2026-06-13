@@ -9,9 +9,9 @@ import json
 import logging
 import os
 import sys
+import traceback
 from http.server import BaseHTTPRequestHandler
 
-# Корень проекта в PYTHONPATH для импортов
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from aiogram.types import Update
@@ -25,7 +25,8 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
 
     expected_secret = os.getenv("WEBHOOK_SECRET", "")
     if expected_secret and secret_header != expected_secret:
-        return 403, "Forbidden"
+        logger.warning("Webhook 403: неверный WEBHOOK_SECRET")
+        return 403, "Forbidden: WEBHOOK_SECRET mismatch"
 
     try:
         payload = json.loads(body.decode("utf-8"))
@@ -33,9 +34,14 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
         return 400, "Invalid JSON"
 
     bot, dp, _, _ = await get_application()
-    update = Update.model_validate(payload, context={"bot": bot})
-    await dp.feed_update(bot, update)
-    return 200, "OK"
+    try:
+        update = Update.model_validate(payload, context={"bot": bot})
+        await dp.feed_update(bot, update)
+        return 200, "OK"
+    finally:
+        # На Vercel закрываем сессию после каждого запроса
+        if os.getenv("VERCEL"):
+            await bot.session.close()
 
 
 class handler(BaseHTTPRequestHandler):
@@ -49,8 +55,9 @@ class handler(BaseHTTPRequestHandler):
         try:
             status, message = asyncio.run(_handle_webhook(body, secret))
         except Exception:
-            logger.exception("Webhook error")
-            status, message = 500, "Internal Server Error"
+            tb = traceback.format_exc()
+            logger.error("Webhook error:\n%s", tb)
+            status, message = 500, f"Error: {tb[-200:]}"
 
         self.send_response(status)
         self.send_header("Content-type", "text/plain")

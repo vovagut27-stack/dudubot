@@ -8,6 +8,9 @@
     "api/index.py": {
       "maxDuration": 10
     },
+    "api/health.py": {
+      "maxDuration": 15
+    },
     "api/webhook.py": {
       "maxDuration": 60
     },

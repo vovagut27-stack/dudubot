@@ -34,10 +34,24 @@ def create_dispatcher() -> Dispatcher:
     dp = Dispatcher(storage=MemoryStorage())
 
     @dp.errors()
-    async def global_error_handler(event: ErrorEvent) -> None:
-        logging.getLogger(__name__).exception(
-            "Необработанная ошибка: %s", event.exception
-        )
+    async def global_error_handler(event: ErrorEvent, bot: Bot) -> None:
+        logger.exception("Необработанная ошибка: %s", event.exception)
+        update = event.update
+        chat_id = None
+        if update.message:
+            chat_id = update.message.chat.id
+        elif update.callback_query and update.callback_query.message:
+            chat_id = update.callback_query.message.chat.id
+
+        if chat_id:
+            try:
+                await bot.send_message(
+                    chat_id,
+                    "⚠️ Произошла ошибка сервера.\n"
+                    "Проверьте /api/health на Vercel или попробуйте /start снова.",
+                )
+            except Exception:
+                logger.exception("Не удалось отправить сообщение об ошибке")
 
     for router in get_all_routers():
         dp.include_router(router)

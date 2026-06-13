@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 from aiogram.types import BotCommand
@@ -17,15 +18,19 @@ from services.word_service import WordService
 
 logger = logging.getLogger(__name__)
 
-# Кэш для «тёплых» serverless-инстансов Vercel
 _cache: dict[str, Any] = {}
+_db_ready = False
 
 
 async def ensure_database(settings: Settings) -> None:
     """Инициализирует БД и создаёт таблицы при первом запуске."""
+    global _db_ready
     from database import engine
 
-    init_db(settings)
+    if not _db_ready:
+        init_db(settings)
+        _db_ready = True
+
     if engine is not None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -50,9 +55,12 @@ async def get_application() -> tuple[Any, Any, WordService, Settings]:
     """
     Возвращает (bot, dispatcher, word_service, settings).
 
-    На Vercel повторно использует объекты в рамках одного инстанса.
+    На Vercel создаёт новый Bot на каждый запрос — иначе aiohttp-сессия
+    привязана к старому event loop и бот «молчит».
     """
-    if "bot" in _cache:
+    is_vercel = bool(os.getenv("VERCEL"))
+
+    if not is_vercel and "bot" in _cache:
         return _cache["bot"], _cache["dp"], _cache["word_service"], _cache["settings"]
 
     settings = get_settings()
@@ -63,5 +71,7 @@ async def get_application() -> tuple[Any, Any, WordService, Settings]:
     dp = create_dispatcher()
     dp.workflow_data.update(settings=settings, word_service=word_service)
 
-    _cache.update(bot=bot, dp=dp, word_service=word_service, settings=settings)
+    if not is_vercel:
+        _cache.update(bot=bot, dp=dp, word_service=word_service, settings=settings)
+
     return bot, dp, word_service, settings

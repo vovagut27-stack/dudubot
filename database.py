@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -29,24 +30,33 @@ async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 def _create_turso_engine(settings: Settings) -> AsyncEngine:
     """
-    Turso через embedded replica: локальный файл + синхронизация с облаком.
+    Turso/libSQL.
 
-    На Vercel используется /tmp/turso_bot.db (см. TURSO_EMBEDDED_PATH).
+    На Vercel — только remote (без embedded replica, /tmp ненадёжен).
+    Локально — embedded replica для скорости.
     """
     from sqlalchemy import create_engine
     from sqlalchemy.ext.asyncio import async_engine_from_sync_engine
 
-    settings.turso_embedded_path.parent.mkdir(parents=True, exist_ok=True)
-    embedded = settings.turso_embedded_path.as_posix()
+    if os.getenv("VERCEL"):
+        # Remote-only: sqlite+libsql://host?secure=true
+        sync_engine = create_engine(
+            f"sqlite+{settings.database_url}?secure=true",
+            connect_args={"auth_token": settings.database_auth_token},
+        )
+        logger.info("Turso remote: %s", settings.database_url)
+    else:
+        settings.turso_embedded_path.parent.mkdir(parents=True, exist_ok=True)
+        embedded = settings.turso_embedded_path.as_posix()
+        sync_engine = create_engine(
+            f"sqlite+libsql:///{embedded}",
+            connect_args={
+                "auth_token": settings.database_auth_token,
+                "sync_url": settings.database_url,
+            },
+        )
+        logger.info("Turso embedded=%s sync=%s", embedded, settings.database_url)
 
-    sync_engine = create_engine(
-        f"sqlite+libsql:///{embedded}",
-        connect_args={
-            "auth_token": settings.database_auth_token,
-            "sync_url": settings.database_url,
-        },
-    )
-    logger.info("Turso: embedded=%s sync=%s", embedded, settings.database_url)
     return async_engine_from_sync_engine(sync_engine)
 
 

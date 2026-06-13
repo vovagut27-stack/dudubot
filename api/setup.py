@@ -25,9 +25,17 @@ async def _setup_webhook() -> dict:
     bot, _, _, settings = await get_application()
     await set_bot_commands(bot)
 
-    vercel_url = os.getenv("VERCEL_URL") or os.getenv("WEBHOOK_BASE_URL", "")
+    # Production URL — важно для webhook (не preview-деплой)
+    vercel_url = (
+        os.getenv("WEBHOOK_BASE_URL")
+        or os.getenv("VERCEL_PROJECT_PRODUCTION_URL")
+        or os.getenv("VERCEL_URL")
+        or ""
+    )
     if not vercel_url:
-        raise ValueError("VERCEL_URL или WEBHOOK_BASE_URL не задан")
+        raise ValueError(
+            "Задайте WEBHOOK_BASE_URL=https://ваш-проект.vercel.app в Vercel env"
+        )
 
     if not vercel_url.startswith("https://"):
         vercel_url = f"https://{vercel_url}"
