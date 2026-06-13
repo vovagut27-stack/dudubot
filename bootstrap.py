@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 _cache: dict[str, Any] = {}
 _db_ready = False
+# Dispatcher создаётся один раз — роутеры нельзя подключать повторно
+_dispatcher = None
 
 
 async def ensure_database(settings: Settings) -> None:
@@ -57,12 +59,19 @@ async def set_bot_commands(bot) -> None:
     await bot.set_my_commands(commands)
 
 
+def _get_dispatcher():
+    """Singleton Dispatcher — роутеры подключаются только один раз."""
+    global _dispatcher
+    if _dispatcher is None:
+        _dispatcher = create_dispatcher()
+    return _dispatcher
+
+
 async def get_application() -> tuple[Any, Any, WordService, Settings]:
     """
     Возвращает (bot, dispatcher, word_service, settings).
 
-    На Vercel создаёт новый Bot на каждый запрос — иначе aiohttp-сессия
-    привязана к старому event loop и бот «молчит».
+    На Vercel: новый Bot на каждый запрос, Dispatcher — singleton.
     """
     is_vercel = bool(os.getenv("VERCEL"))
 
@@ -74,7 +83,7 @@ async def get_application() -> tuple[Any, Any, WordService, Settings]:
 
     word_service = WordService(settings.words_file)
     bot = create_bot(settings)
-    dp = create_dispatcher()
+    dp = _get_dispatcher()
     dp.workflow_data.update(settings=settings, word_service=word_service)
 
     if not is_vercel:

@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
-from database import get_session
+from database import session_scope
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -21,7 +21,6 @@ class DatabaseMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        async for session in get_session():
+        async with session_scope() as session:
             data["session"] = session
             return await handler(event, data)
-        return None

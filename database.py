@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Union
 
 from sqlalchemy.ext.asyncio import (
@@ -105,8 +106,9 @@ def init_db(settings: Settings) -> None:
 SessionType = Union[AsyncSession, "AsyncCompatSession"]
 
 
-async def get_session() -> AsyncGenerator[SessionType, None]:
-    """Dependency: выдаёт сессию БД."""
+@asynccontextmanager
+async def session_scope() -> AsyncGenerator[SessionType, None]:
+    """Контекстный менеджер сессии — гарантирует commit/rollback."""
     if use_sync_sessions:
         from database_sync import AsyncCompatSession
 
@@ -133,6 +135,12 @@ async def get_session() -> AsyncGenerator[SessionType, None]:
         except Exception:
             await session.rollback()
             raise
+
+
+async def get_session() -> AsyncGenerator[SessionType, None]:
+    """Dependency: выдаёт асинхронную сессию БД."""
+    async with session_scope() as session:
+        yield session
 
 
 async def close_db() -> None:

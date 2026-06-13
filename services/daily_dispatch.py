@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from aiogram import Bot
 
 from config import Settings
-from database import async_session_factory, get_session, use_sync_sessions
+from database import async_session_factory, session_scope, use_sync_sessions
 from handlers.daily import send_daily_word_to_user
 from services.user_service import UserService
 from services.word_service import WordService
@@ -40,7 +40,7 @@ async def run_daily_dispatch(
     sent = 0
     users: list = []
 
-    async for session in get_session():
+    async with session_scope() as session:
         user_service = UserService(session)
         users = await user_service.get_users_for_notification(hour, minute)
 
@@ -57,7 +57,6 @@ async def run_daily_dispatch(
                 sent += 1
             except Exception:
                 logger.exception("Ошибка рассылки user_id=%s", user.telegram_id)
-        break
 
     if users:
         logger.info(
