@@ -34,18 +34,26 @@ async def run_daily_dispatch(
         logger.warning("Session factory не инициализирована")
         return {"users": 0, "sent": 0}
 
-    tz = ZoneInfo(settings.timezone)
-    now = datetime.now(tz)
-    hour, minute = now.hour, now.minute
     sent = 0
-    users: list = []
+    matched = 0
 
     async with session_scope() as session:
         user_service = UserService(session)
-        users = await user_service.get_users_for_notification(hour, minute)
+        users = await user_service.get_onboarded_users()
 
         for user in users:
             try:
+                try:
+                    user_tz = ZoneInfo(user.timezone or settings.timezone)
+                except Exception:
+                    user_tz = ZoneInfo(settings.timezone)
+                now = datetime.now(user_tz)
+                if (
+                    user.notification_time.hour != now.hour
+                    or user.notification_time.minute != now.minute
+                ):
+                    continue
+                matched += 1
                 await send_daily_word_to_user(
                     bot=bot,
                     user=user,
@@ -58,13 +66,7 @@ async def run_daily_dispatch(
             except Exception:
                 logger.exception("Ошибка рассылки user_id=%s", user.telegram_id)
 
-    if users:
-        logger.info(
-            "Рассылка: %d пользователей, отправлено %d в %02d:%02d",
-            len(users),
-            sent,
-            hour,
-            minute,
-        )
+    if matched:
+        logger.info("Рассылка: %d пользователей, отправлено %d", matched, sent)
 
-    return {"users": len(users), "sent": sent}
+    return {"users": matched, "sent": sent}

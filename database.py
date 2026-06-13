@@ -223,14 +223,89 @@ def _run_schema_patches(conn) -> list[str]:
     return applied
 
 
+def _resolve_sync_engine(bind):
+    """Sync Engine из Engine, AsyncEngine или Connection."""
+    from sqlalchemy.engine import Engine
+    from sqlalchemy.ext.asyncio import AsyncEngine
+
+    if isinstance(bind, Engine):
+        return bind
+    if isinstance(bind, AsyncEngine):
+        return bind.sync_engine
+    return bind.engine
+
+
+def _daily_logs_has_legacy_constraint(conn) -> bool:
+    """Старая схема: UNIQUE(user_id, sent_date, language) — только 1 слово/язык/день."""
+    from sqlalchemy import text
+
+    row = conn.execute(
+        text("SELECT sql FROM sqlite_master WHERE type='table' AND name='daily_word_logs'")
+    ).fetchone()
+    if not row or not row[0]:
+        return False
+    unique_part = (row[0] or "").upper().split("UNIQUE")[-1]
+    if "WORD_KEY" in unique_part:
+        return False
+    return "LANGUAGE" in unique_part
+
+
+def _migrate_daily_word_logs(conn) -> None:
+    """Пересоздаёт daily_word_logs с UNIQUE(user_id, sent_date, word_key)."""
+    from sqlalchemy import text
+
+    if not _table_exists(conn, "daily_word_logs"):
+        return
+    if not _daily_logs_has_legacy_constraint(conn):
+        return
+
+    logger.info("Migration: rebuilding daily_word_logs (legacy unique constraint)")
+    conn.execute(
+        text(
+            """
+            CREATE TABLE daily_word_logs_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                word_key VARCHAR(128) NOT NULL,
+                language VARCHAR(8) NOT NULL,
+                sent_date DATE NOT NULL,
+                message_id BIGINT,
+                FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE,
+                UNIQUE (user_id, sent_date, word_key)
+            )
+            """
+        )
+    )
+    conn.execute(
+        text(
+            """
+            INSERT INTO daily_word_logs_new
+                (id, user_id, word_key, language, sent_date, message_id)
+            SELECT id, user_id, word_key, language, sent_date, message_id
+            FROM daily_word_logs
+            """
+        )
+    )
+    conn.execute(text("DROP TABLE daily_word_logs"))
+    conn.execute(text("ALTER TABLE daily_word_logs_new RENAME TO daily_word_logs"))
+
+
 def _run_schema_on_connection(conn) -> list[str]:
     """Создаёт таблицы и применяет патчи в одном соединении."""
     from models.models import Base
 
+    applied: list[str] = []
     if not _table_exists(conn, "users"):
         Base.metadata.create_all(bind=conn)
         logger.info("Created database tables")
-    return _run_schema_patches(conn)
+        applied.append("tables.created")
+
+    if _daily_logs_has_legacy_constraint(conn):
+        _migrate_daily_word_logs(conn)
+        applied.append("daily_word_logs.rebuilt")
+
+    applied.extend(_run_schema_patches(conn))
+    return applied
 
 
 def prepare_schema(bind) -> list[str]:
@@ -239,9 +314,7 @@ def prepare_schema(bind) -> list[str]:
 
     Turso/libSQL не поддерживает isolation_level=AUTOCOMMIT — используем begin().
     """
-    from sqlalchemy.engine import Engine
-
-    engine = bind if isinstance(bind, Engine) else bind.engine
+    engine = _resolve_sync_engine(bind)
 
     with engine.begin() as conn:
         return _run_schema_on_connection(conn)
@@ -249,11 +322,14 @@ def prepare_schema(bind) -> list[str]:
 
 def migrate_schema(bind) -> list[str]:
     """Добавляет новые колонки в существующие таблицы (Turso/SQLite)."""
-    from sqlalchemy.engine import Engine
-
-    engine = bind if isinstance(bind, Engine) else bind.engine
+    engine = _resolve_sync_engine(bind)
 
     with engine.begin() as conn:
         if not _table_exists(conn, "users"):
             return []
-        return _run_schema_patches(conn)
+        applied: list[str] = []
+        if _daily_logs_has_legacy_constraint(conn):
+            _migrate_daily_word_logs(conn)
+            applied.append("daily_word_logs.rebuilt")
+        applied.extend(_run_schema_patches(conn))
+        return applied

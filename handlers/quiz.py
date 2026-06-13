@@ -18,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
+from utils.html_escape import h
+from utils.keyboards import quiz_answer_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -117,7 +119,7 @@ async def _send_question(
 
     await message.answer(
         f"🎯 Вопрос {current + 1}/{len(data.get('questions', []))}\n\n"
-        f"Как переводится слово <b>{word.word}</b>?",
+        f"Как переводится слово <b>{h(word.word)}</b>?",
         reply_markup=quiz_answer_keyboard(buttons),
     )
 
@@ -175,4 +177,3 @@ async def quiz_answer(
     if next_word:
         await callback.message.delete()
         await _send_question(callback.message, next_word, word_service, state)
-    await callback.answer()

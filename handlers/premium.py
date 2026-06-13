@@ -192,13 +192,16 @@ async def successful_payment(
 
     is_subscription = payment.is_recurring or bool(payment.subscription_expiration_date)
 
-    await user_service.activate_premium(
+    activated = await user_service.activate_premium(
         user=user,
         charge_id=payment.telegram_payment_charge_id,
         amount=payment.total_amount,
         payload=payment.invoice_payload,
         is_subscription=is_subscription,
     )
+
+    if not activated:
+        return
 
     until = user.premium_until.strftime("%d.%m.%Y") if user.premium_until else "—"
     await message.answer(

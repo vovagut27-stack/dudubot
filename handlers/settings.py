@@ -72,12 +72,18 @@ async def cmd_settings(message: Message, session: AsyncSession) -> None:
 
 
 @router.callback_query(F.data == "settings:back")
-async def settings_back(callback: CallbackQuery, session: AsyncSession) -> None:
+async def settings_back(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    *,
+    skip_answer: bool = False,
+) -> None:
     """Возврат в меню настроек."""
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     if user is None:
-        await callback.answer(t("ru", "error_generic"))
+        if not skip_answer:
+            await callback.answer(t("ru", "error_generic"))
         return
 
     ui = normalize_ui_language(user.ui_language)
@@ -85,7 +91,8 @@ async def settings_back(callback: CallbackQuery, session: AsyncSession) -> None:
         _settings_text(user),
         reply_markup=settings_keyboard(ui),
     )
-    await callback.answer()
+    if not skip_answer:
+        await callback.answer()
 
 
 @router.callback_query(F.data == "settings:level")
@@ -112,7 +119,7 @@ async def settings_set_level(callback: CallbackQuery, session: AsyncSession) -> 
     if user:
         user.level = level
     await callback.answer(t(ui, "settings_level_saved", level=level))
-    await settings_back(callback, session)
+    await settings_back(callback, session, skip_answer=True)
 
 
 @router.callback_query(F.data == "settings:time")
@@ -139,7 +146,7 @@ async def settings_set_time(callback: CallbackQuery, session: AsyncSession) -> N
     if user:
         user.notification_time = time(h, m)
     await callback.answer(t(ui, "settings_time_saved", time=time_str))
-    await settings_back(callback, session)
+    await settings_back(callback, session, skip_answer=True)
 
 
 @router.callback_query(F.data == "settings:languages")
@@ -205,7 +212,7 @@ async def settings_save_langs(
 
     await state.clear()
     await callback.answer(t(ui, "settings_langs_saved"))
-    await settings_back(callback, session)
+    await settings_back(callback, session, skip_answer=True)
 
 
 @router.callback_query(F.data == "settings:ui_language")

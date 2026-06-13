@@ -170,20 +170,6 @@ class UserService:
             log.message_id = message_id
             return log
 
-        # Старая схема БД: UNIQUE(user_id, sent_date, language) — одна запись на язык
-        legacy = await self._session.execute(
-            select(DailyWordLog).where(
-                DailyWordLog.user_id == user.id,
-                DailyWordLog.sent_date == sent_date,
-                DailyWordLog.language == language,
-            )
-        )
-        legacy_log = legacy.scalar_one_or_none()
-        if legacy_log is not None:
-            legacy_log.word_key = word_key
-            legacy_log.message_id = message_id
-            return legacy_log
-
         log = DailyWordLog(
             user_id=user.id,
             word_key=word_key,
@@ -226,6 +212,13 @@ class UserService:
         )
         return list(result.scalars().all())
 
+    async def get_onboarded_users(self) -> list[User]:
+        """Все пользователи с завершённым онбордингом."""
+        result = await self._session.execute(
+            select(User).where(User.onboarding_completed.is_(True))
+        )
+        return list(result.scalars().all())
+
     async def get_users_for_notification(self, hour: int, minute: int) -> list[User]:
         """Пользователи, которым пора отправить слово в указанное время."""
         result = await self._session.execute(
@@ -257,8 +250,15 @@ class UserService:
         *,
         days: int = 30,
         is_subscription: bool = True,
-    ) -> None:
-        """Активирует премиум после успешной оплаты Stars."""
+    ) -> bool:
+        """Активирует премиум после успешной оплаты Stars. Returns False если платёж уже обработан."""
+        existing = await self._session.execute(
+            select(PaymentLog).where(PaymentLog.charge_id == charge_id)
+        )
+        if existing.scalar_one_or_none() is not None:
+            logger.info("Платёж %s уже обработан", charge_id)
+            return False
+
         now = datetime.now(timezone.utc)
         base = user.premium_until if self.is_premium_active(user) and user.premium_until else now
         if base.tzinfo is None:
@@ -277,6 +277,7 @@ class UserService:
         )
         self._session.add(payment)
         logger.info("Premium активирован для user=%s до %s", user.telegram_id, user.premium_until)
+        return True
 
     async def save_quiz_result(self, user_id: int, score: int, total: int) -> None:
         """Сохраняет результат квиза."""

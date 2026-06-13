@@ -231,13 +231,13 @@ def normalize_ui_language(code: str | None) -> str:
     return DEFAULT_UI_LANGUAGE
 
 
-def t(lang: str, key: str, **kwargs: str) -> str:
+def t(ui_lang: str, message_key: str, **format_kwargs: str) -> str:
     """Перевод строки по ключу."""
-    lang = normalize_ui_language(lang)
-    text = MESSAGES.get(lang, MESSAGES[DEFAULT_UI_LANGUAGE]).get(
-        key, MESSAGES[DEFAULT_UI_LANGUAGE][key]
+    ui_lang = normalize_ui_language(ui_lang)
+    text = MESSAGES.get(ui_lang, MESSAGES[DEFAULT_UI_LANGUAGE]).get(
+        message_key, MESSAGES[DEFAULT_UI_LANGUAGE][message_key]
     )
-    return text.format(**kwargs) if kwargs else text
+    return text.format(**format_kwargs) if format_kwargs else text
 
 
 def all_texts(key: str) -> tuple[str, ...]:

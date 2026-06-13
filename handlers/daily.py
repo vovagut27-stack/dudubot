@@ -42,13 +42,26 @@ async def send_daily_word_to_user(
     is_premium = user_service.is_premium_active(user)
     limit = DAILY_WORDS_PREMIUM if is_premium else DAILY_WORDS_FREE
 
+    already_sent = await user_service.get_today_words(user, target_date)
+    if len(already_sent) >= limit:
+        await bot.send_message(
+            user.telegram_id,
+            f"📬 Слова на сегодня уже отправлены ({len(already_sent)}/{limit}).\n"
+            "Новые слова — завтра или оформите Premium для большего лимита.",
+        )
+        return
+
+    sent_keys = {log.word_key for log in already_sent}
+    remaining = limit - len(already_sent)
+
     words = word_service.pick_daily_words(
         languages=languages,
         level=user.level,
-        count=limit,
+        count=remaining + len(sent_keys),
         target_date=target_date,
         user_id=user.telegram_id,
     )
+    words = [w for w in words if w.key not in sent_keys][:remaining]
 
     if not words:
         logger.warning("Нет слов для user=%s langs=%s", user.telegram_id, languages)
@@ -59,10 +72,11 @@ async def send_daily_word_to_user(
         return
 
     plan = "⭐ Premium" if is_premium else f"🆓 Free ({DAILY_WORDS_FREE} слова/день)"
+    total_today = len(already_sent) + len(words)
     await bot.send_message(
         chat_id=user.telegram_id,
         text=(
-            f"📬 <b>Слова дня</b> — {len(words)} из {limit}\n"
+            f"📬 <b>Слова дня</b> — {total_today} из {limit}\n"
             f"{plan}\n"
             + ("" if is_premium else f"\n💡 Premium = <b>{DAILY_WORDS_PREMIUM} слов</b> /premium")
         ),

@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.user_service import UserService
 from services.word_service import WordService
 from utils.i18n import normalize_ui_language
+from utils.keyboards import dictionary_keyboard, premium_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,11 @@ async def dict_page(
     word_service: WordService,
 ) -> None:
     """Пагинация словаря."""
-    page = int(callback.data.split(":")[-1])
+    try:
+        page = int(callback.data.split(":")[-1])
+    except ValueError:
+        await callback.answer("Ошибка страницы", show_alert=True)
+        return
     await _show_dictionary_page(
         callback.message,
         session,

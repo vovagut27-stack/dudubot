@@ -28,11 +28,17 @@ def _authorized(auth_header: str | None) -> bool:
 
 
 async def _run_cron() -> dict:
+    import os
+
     from bootstrap import get_application
     from services.daily_dispatch import run_daily_dispatch
 
     bot, _, word_service, settings = await get_application()
-    return await run_daily_dispatch(bot, settings, word_service)
+    try:
+        return await run_daily_dispatch(bot, settings, word_service)
+    finally:
+        if os.getenv("VERCEL"):
+            await bot.session.close()
 
 
 class handler(BaseHTTPRequestHandler):
