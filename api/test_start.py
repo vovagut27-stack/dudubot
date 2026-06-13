@@ -1,5 +1,5 @@
 """
-Полный тест /start через dispatcher. GET /api/test_start
+Полный тест /start через production dispatcher. GET /api/test_start
 """
 
 from __future__ import annotations
@@ -16,12 +16,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 async def _test_start() -> dict:
     from aiogram.types import Update
-    from bot import create_bot, create_dispatcher
-    from config import get_settings
+    from bootstrap import get_application
 
-    settings = get_settings()
-    bot = create_bot(settings)
-    dp = create_dispatcher()  # отдельный dispatcher — не трогаем production singleton
+    bot, dp, _, _ = await get_application()
 
     payload = {
         "update_id": 1234567890,
@@ -42,22 +39,20 @@ async def _test_start() -> dict:
 
     errors: list[str] = []
 
-    from aiogram.types import ErrorEvent
-
-    @dp.errors()
-    async def _capture(event: ErrorEvent, bot_instance) -> bool:
-        errors.append(f"{type(event.exception).__name__}: {event.exception}")
-        return True
-
     try:
         update = Update.model_validate(payload, context={"bot": bot})
         await dp.feed_update(bot, update)
     except Exception as exc:
-        errors.append(f"feed_update: {type(exc).__name__}: {exc}")
+        errors.append(f"{type(exc).__name__}: {exc}")
     finally:
-        await bot.session.close()
+        if os.getenv("VERCEL"):
+            await bot.session.close()
 
-    return {"ok": len(errors) == 0, "errors": errors}
+    return {
+        "ok": len(errors) == 0,
+        "errors": errors,
+        "note": "БД работает отдельно: /api/test_db. Это тест логики /start.",
+    }
 
 
 class handler(BaseHTTPRequestHandler):
