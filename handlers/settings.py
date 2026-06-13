@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import SUPPORTED_LANGUAGES
 from services.user_service import UserService
+from utils.callbacks import parse_time_callback
 from utils.keyboards import (
     settings_keyboard,
     settings_languages_keyboard,
@@ -109,8 +110,7 @@ async def settings_time_menu(callback: CallbackQuery) -> None:
 @router.callback_query(F.data.startswith("settings:set_time:"))
 async def settings_set_time(callback: CallbackQuery, session: AsyncSession) -> None:
     """Сохранение времени уведомлений."""
-    time_str = callback.data.split(":")[-1]
-    h, m = map(int, time_str.split(":"))
+    h, m, time_str = parse_time_callback(callback.data, "settings:set_time:")
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     if user:

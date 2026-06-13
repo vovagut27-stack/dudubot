@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from utils.html_escape import h
+from utils.callbacks import parse_time_callback
 from utils.keyboards import (
     main_menu_keyboard,
     onboarding_languages_keyboard,
@@ -134,8 +135,7 @@ async def onboard_time(
     session: AsyncSession,
 ) -> None:
     """Завершение онбординга — сохранение настроек."""
-    time_str = callback.data.split(":")[-1]
-    hours, minutes = map(int, time_str.split(":"))
+    hours, minutes, time_str = parse_time_callback(callback.data, "onboard:time:")
 
     data = await state.get_data()
     level = data.get("level", "A1")
