@@ -101,6 +101,8 @@ async def _send_question(
     state: FSMContext,
 ) -> None:
     """Отправляет вопрос квиза."""
+    from utils.keyboards import quiz_answer_keyboard
+
     wrong = word_service.pick_quiz_options(word, word.language, word.level, count=3)
     options_text = [word.translation] + wrong
     random.shuffle(options_text)

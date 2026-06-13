@@ -17,6 +17,9 @@
     "api/test_start.py": {
       "maxDuration": 60
     },
+    "api/test_quiz.py": {
+      "maxDuration": 60
+    },
     "api/webhook.py": {
       "maxDuration": 60
     },
