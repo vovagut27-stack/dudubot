@@ -23,6 +23,9 @@
     "api/setup.py": {
       "maxDuration": 30
     },
+    "api/migrate.py": {
+      "maxDuration": 30
+    },
     "api/cron/daily.py": {
       "maxDuration": 60
     }

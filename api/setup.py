@@ -16,12 +16,13 @@ from aiogram.types import WebhookInfo
 
 
 async def _setup_webhook() -> dict:
-    """Регистрирует webhook — БД не нужна."""
+    """Регистрирует webhook и применяет миграции БД."""
     from bot import create_bot
-    from bootstrap import set_bot_commands
+    from bootstrap import ensure_database, set_bot_commands
     from config import get_settings
 
     settings = get_settings()
+    await ensure_database(settings)
     bot = create_bot(settings)
     await set_bot_commands(bot)
 

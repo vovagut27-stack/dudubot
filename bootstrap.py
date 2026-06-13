@@ -37,13 +37,17 @@ async def ensure_database(settings: Settings) -> None:
 
     if use_sync_sessions and turso_sync_engine is not None:
         await asyncio.to_thread(Base.metadata.create_all, turso_sync_engine)
-        await asyncio.to_thread(migrate_schema, turso_sync_engine)
+        applied = await asyncio.to_thread(migrate_schema, turso_sync_engine)
+        if applied:
+            logger.info("Schema migrations applied: %s", ", ".join(applied))
         return
 
     if engine is not None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            await conn.run_sync(migrate_schema)
+        applied = await asyncio.to_thread(migrate_schema, engine)
+        if applied:
+            logger.info("Schema migrations applied: %s", ", ".join(applied))
 
 
 async def set_bot_commands(bot) -> None:

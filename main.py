@@ -59,7 +59,9 @@ async def main() -> None:
     if engine is not None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            await conn.run_sync(migrate_schema)
+        applied = await asyncio.to_thread(migrate_schema, engine)
+        if applied:
+            logger.info("Schema migrations applied: %s", ", ".join(applied))
 
     word_service = WordService(settings.words_file)
 

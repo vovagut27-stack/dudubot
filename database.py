@@ -171,28 +171,70 @@ async def close_db() -> None:
         await engine.dispose()
 
 
-def migrate_schema(bind) -> None:
-    """Добавляет новые колонки в существующие таблицы (Turso/SQLite)."""
-    from sqlalchemy import inspect, text
+def _table_exists(conn, table: str) -> bool:
+    from sqlalchemy import text
+
+    return (
+        conn.execute(
+            text("SELECT 1 FROM sqlite_master WHERE type='table' AND name=:t"),
+            {"t": table},
+        ).fetchone()
+        is not None
+    )
+
+
+def _table_columns(conn, table: str) -> set[str]:
+    """Список колонок через PRAGMA — надёжнее inspect() на Turso/libSQL."""
+    from sqlalchemy import text
+
+    rows = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+    return {row[1] for row in rows}
+
+
+def _run_schema_patches(conn) -> list[str]:
+    """Применяет ALTER TABLE для недостающих колонок. Возвращает список добавленных."""
+    from sqlalchemy import text
+
+    applied: list[str] = []
+    patches: list[tuple[str, str, str]] = [
+        (
+            "users",
+            "ui_language",
+            "ALTER TABLE users ADD COLUMN ui_language TEXT DEFAULT 'ru'",
+        ),
+    ]
+
+    for table, column, ddl in patches:
+        if not _table_exists(conn, table):
+            continue
+        if column in _table_columns(conn, table):
+            continue
+        try:
+            conn.execute(text(ddl))
+            applied.append(f"{table}.{column}")
+            logger.info("Migration: added %s.%s", table, column)
+        except Exception as exc:
+            msg = str(exc).lower()
+            if "duplicate column" in msg or "already exists" in msg:
+                logger.info("Migration: %s.%s already present", table, column)
+                continue
+            raise
+
+    return applied
+
+
+def migrate_schema(bind) -> list[str]:
+    """
+    Добавляет новые колонки в существующие таблицы (Turso/SQLite).
+
+    DDL выполняется в AUTOCOMMIT — иначе ALTER на Turso/Hrana может не сохраниться
+    внутри транзакции engine.begin().
+    """
     from sqlalchemy.engine import Engine
 
-    def _apply(conn) -> None:
-        insp = inspect(conn)
-        if "users" not in insp.get_table_names():
-            return
+    engine = bind if isinstance(bind, Engine) else bind.engine
 
-        cols = {c["name"] for c in insp.get_columns("users")}
-        if "ui_language" not in cols:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN ui_language VARCHAR(8) "
-                    "DEFAULT 'ru' NOT NULL"
-                )
-            )
-            logger.info("Migration: added users.ui_language")
-
-    if isinstance(bind, Engine):
-        with bind.begin() as conn:
-            _apply(conn)
-    else:
-        _apply(bind)
+    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        if not _table_exists(conn, "users"):
+            return []
+        return _run_schema_patches(conn)
