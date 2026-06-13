@@ -29,7 +29,7 @@ async def ensure_database(settings: Settings) -> None:
     global _db_ready
     import asyncio
 
-    from database import engine, turso_sync_engine, use_sync_sessions
+    from database import engine, migrate_schema, turso_sync_engine, use_sync_sessions
 
     if not _db_ready:
         init_db(settings)
@@ -37,11 +37,13 @@ async def ensure_database(settings: Settings) -> None:
 
     if use_sync_sessions and turso_sync_engine is not None:
         await asyncio.to_thread(Base.metadata.create_all, turso_sync_engine)
+        await asyncio.to_thread(migrate_schema, turso_sync_engine)
         return
 
     if engine is not None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(migrate_schema)
 
 
 async def set_bot_commands(bot) -> None:

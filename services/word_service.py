@@ -128,7 +128,7 @@ class WordService:
 
         slot — порядковый номер слова за день (0, 1, 2…).
         """
-        candidates = self.filter_words(language, level)
+        candidates = self.filter_words(language, level, max_level=False)
         if not candidates:
             return None
 
@@ -190,7 +190,7 @@ class WordService:
         """Генерирует неправильные варианты ответа для квиза."""
         others = [
             w.translation
-            for w in self.filter_words(language, level)
+            for w in self.filter_words(language, level, max_level=False)
             if w.key != correct.key and w.translation != correct.translation
         ]
         seed = correct.key

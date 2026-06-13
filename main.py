@@ -54,11 +54,12 @@ async def main() -> None:
 
     # Создаём таблицы при первом запуске (для prod используйте alembic upgrade head)
     from models.models import Base
-    from database import engine
+    from database import engine, migrate_schema
 
     if engine is not None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(migrate_schema)
 
     word_service = WordService(settings.words_file)
 

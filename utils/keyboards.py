@@ -6,28 +6,30 @@ from __future__ import annotations
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
-from config import CEFR_LEVELS, SUPPORTED_LANGUAGES, SUPPORT_URL
+from config import CEFR_LEVELS, SUPPORTED_LANGUAGES, SUPPORT_URL, UI_LANGUAGES
+from utils.i18n import normalize_ui_language, t
 
 
-def main_menu_keyboard() -> ReplyKeyboardMarkup:
+def main_menu_keyboard(ui_lang: str = "ru") -> ReplyKeyboardMarkup:
     """Главное меню после онбординга."""
+    lang = normalize_ui_language(ui_lang)
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="📚 Слово дня"),
-                KeyboardButton(text="📊 Статистика"),
+                KeyboardButton(text=t(lang, "btn_today")),
+                KeyboardButton(text=t(lang, "btn_stats")),
             ],
             [
-                KeyboardButton(text="⚙️ Настройки"),
-                KeyboardButton(text="🎯 Квиз"),
+                KeyboardButton(text=t(lang, "btn_settings")),
+                KeyboardButton(text=t(lang, "btn_quiz")),
             ],
             [
-                KeyboardButton(text="📖 Мой словарь"),
-                KeyboardButton(text="⭐ Премиум"),
+                KeyboardButton(text=t(lang, "btn_dictionary")),
+                KeyboardButton(text=t(lang, "btn_premium")),
             ],
         ],
         resize_keyboard=True,
-        input_field_placeholder="Выберите действие…",
+        input_field_placeholder=t(lang, "menu_placeholder"),
     )
 
 
@@ -47,9 +49,14 @@ def onboarding_level_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def onboarding_languages_keyboard(selected: set[str] | None = None) -> InlineKeyboardMarkup:
+def onboarding_languages_keyboard(
+    selected: set[str] | None = None,
+    *,
+    ui_lang: str = "ru",
+) -> InlineKeyboardMarkup:
     """Мультивыбор языков при онбординге."""
     selected = selected or set()
+    lang = normalize_ui_language(ui_lang)
     rows = []
     for code, label in SUPPORTED_LANGUAGES.items():
         mark = "✅ " if code in selected else ""
@@ -60,7 +67,7 @@ def onboarding_languages_keyboard(selected: set[str] | None = None) -> InlineKey
             )
         ])
     rows.append([
-        InlineKeyboardButton(text="✔️ Готово", callback_data="onboard:lang:done"),
+        InlineKeyboardButton(text=t(lang, "btn_done"), callback_data="onboard:lang:done"),
     ])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -70,8 +77,8 @@ def onboarding_time_keyboard() -> InlineKeyboardMarkup:
     times = ["07:00", "08:00", "09:00", "12:00", "18:00", "20:00", "21:00"]
     rows = []
     row: list[InlineKeyboardButton] = []
-    for t in times:
-        row.append(InlineKeyboardButton(text=t, callback_data=f"onboard:time:{t}"))
+    for tm in times:
+        row.append(InlineKeyboardButton(text=tm, callback_data=f"onboard:time:{tm}"))
         if len(row) == 3:
             rows.append(row)
             row = []
@@ -97,20 +104,23 @@ def word_actions_keyboard(word_key: str, *, in_dictionary: bool = False) -> Inli
     )
 
 
-def settings_keyboard() -> InlineKeyboardMarkup:
+def settings_keyboard(ui_lang: str = "ru") -> InlineKeyboardMarkup:
     """Меню настроек."""
+    lang = normalize_ui_language(ui_lang)
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🕐 Время уведомлений", callback_data="settings:time")],
-            [InlineKeyboardButton(text="📊 Уровень CEFR", callback_data="settings:level")],
-            [InlineKeyboardButton(text="🌍 Языки", callback_data="settings:languages")],
-            [InlineKeyboardButton(text="⭐ Премиум / Поддержка", callback_data="settings:premium")],
+            [InlineKeyboardButton(text=t(lang, "settings_time_btn"), callback_data="settings:time")],
+            [InlineKeyboardButton(text=t(lang, "settings_level_btn"), callback_data="settings:level")],
+            [InlineKeyboardButton(text=t(lang, "settings_langs_btn"), callback_data="settings:languages")],
+            [InlineKeyboardButton(text=t(lang, "settings_ui_btn"), callback_data="settings:ui_language")],
+            [InlineKeyboardButton(text=t(lang, "settings_premium_btn"), callback_data="settings:premium")],
         ]
     )
 
 
-def settings_level_keyboard() -> InlineKeyboardMarkup:
+def settings_level_keyboard(ui_lang: str = "ru") -> InlineKeyboardMarkup:
     """Изменение уровня в настройках."""
+    lang = normalize_ui_language(ui_lang)
     rows = []
     row: list[InlineKeyboardButton] = []
     for i, level in enumerate(CEFR_LEVELS):
@@ -120,28 +130,30 @@ def settings_level_keyboard() -> InlineKeyboardMarkup:
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data="settings:back")])
+    rows.append([InlineKeyboardButton(text=t(lang, "settings_back"), callback_data="settings:back")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def settings_time_keyboard() -> InlineKeyboardMarkup:
+def settings_time_keyboard(ui_lang: str = "ru") -> InlineKeyboardMarkup:
     """Изменение времени в настройках."""
+    lang = normalize_ui_language(ui_lang)
     times = ["07:00", "08:00", "09:00", "12:00", "18:00", "20:00", "21:00"]
     rows: list[list[InlineKeyboardButton]] = []
     row: list[InlineKeyboardButton] = []
-    for t in times:
-        row.append(InlineKeyboardButton(text=t, callback_data=f"settings:set_time:{t}"))
+    for tm in times:
+        row.append(InlineKeyboardButton(text=tm, callback_data=f"settings:set_time:{tm}"))
         if len(row) == 3:
             rows.append(row)
             row = []
     if row:
         rows.append(row)
-    rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data="settings:back")])
+    rows.append([InlineKeyboardButton(text=t(lang, "settings_back"), callback_data="settings:back")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def settings_languages_keyboard(selected: set[str]) -> InlineKeyboardMarkup:
-    """Изменение языков в настройках."""
+def settings_languages_keyboard(selected: set[str], *, ui_lang: str = "ru") -> InlineKeyboardMarkup:
+    """Изменение языков для изучения в настройках."""
+    lang = normalize_ui_language(ui_lang)
     rows = []
     for code, label in SUPPORTED_LANGUAGES.items():
         mark = "✅ " if code in selected else ""
@@ -151,8 +163,23 @@ def settings_languages_keyboard(selected: set[str]) -> InlineKeyboardMarkup:
                 callback_data=f"settings:toggle_lang:{code}",
             )
         ])
-    rows.append([InlineKeyboardButton(text="💾 Сохранить", callback_data="settings:save_langs")])
-    rows.append([InlineKeyboardButton(text="◀️ Назад", callback_data="settings:back")])
+    rows.append([InlineKeyboardButton(text=t(lang, "btn_save"), callback_data="settings:save_langs")])
+    rows.append([InlineKeyboardButton(text=t(lang, "settings_back"), callback_data="settings:back")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def settings_ui_language_keyboard(current: str) -> InlineKeyboardMarkup:
+    """Выбор языка интерфейса."""
+    rows = []
+    for code, label in UI_LANGUAGES.items():
+        mark = "✅ " if code == current else ""
+        rows.append([
+            InlineKeyboardButton(
+                text=f"{mark}{label}",
+                callback_data=f"settings:set_ui:{code}",
+            )
+        ])
+    rows.append([InlineKeyboardButton(text=t(current, "settings_back"), callback_data="settings:back")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -170,13 +197,14 @@ def quiz_answer_keyboard(options: list[tuple[str, str]]) -> InlineKeyboardMarkup
     )
 
 
-def premium_keyboard() -> InlineKeyboardMarkup:
+def premium_keyboard(ui_lang: str = "ru") -> InlineKeyboardMarkup:
     """Кнопки премиума и поддержки."""
+    lang = normalize_ui_language(ui_lang)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="⭐ Оформить Premium", callback_data="premium:subscribe")],
             [InlineKeyboardButton(text="💝 Поддержать проект", url=SUPPORT_URL)],
-            [InlineKeyboardButton(text="◀️ Назад", callback_data="settings:back")],
+            [InlineKeyboardButton(text=t(lang, "settings_back"), callback_data="settings:back")],
         ]
     )
 

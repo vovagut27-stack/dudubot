@@ -4,12 +4,15 @@ Middleware: инъекция сессии БД в каждый handler.
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
-from database import session_scope
+from database import rollback_session, session_scope
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -23,4 +26,8 @@ class DatabaseMiddleware(BaseMiddleware):
     ) -> Any:
         async with session_scope() as session:
             data["session"] = session
-            return await handler(event, data)
+            try:
+                return await handler(event, data)
+            except Exception:
+                await rollback_session(session)
+                raise

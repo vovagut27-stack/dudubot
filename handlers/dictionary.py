@@ -14,7 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.user_service import UserService
 from services.word_service import WordService
-from utils.keyboards import dictionary_keyboard, premium_keyboard
+from utils.i18n import normalize_ui_language
+from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
 router = Router(name="dictionary")
@@ -47,10 +48,11 @@ async def _show_dictionary_page(
             "• Учить слова повторно\n\n"
             "Оформите подписку через Telegram Stars!"
         )
+        ui = normalize_ui_language(user.ui_language)
         if edit:
-            await target.edit_text(text, reply_markup=premium_keyboard())
+            await target.edit_text(text, reply_markup=premium_keyboard(ui))
         else:
-            await target.answer(text, reply_markup=premium_keyboard())
+            await target.answer(text, reply_markup=premium_keyboard(ui))
         return
 
     progress = await user_service.get_learned_words(user.id, limit=200)
@@ -82,7 +84,7 @@ async def _show_dictionary_page(
 
 
 @router.message(Command("dictionary"))
-@router.message(F.text == "📖 Мой словарь")
+@router.message(menu_btn("btn_dictionary"))
 async def cmd_dictionary(
     message: Message,
     session: AsyncSession,

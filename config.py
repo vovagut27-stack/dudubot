@@ -18,12 +18,22 @@ BASE_DIR = Path(__file__).resolve().parent
 # Загружаем .env из корня проекта
 load_dotenv(BASE_DIR / ".env")
 
-# Поддерживаемые языки: код -> отображаемое имя
+# Языки для изучения: код -> отображаемое имя
 SUPPORTED_LANGUAGES: dict[str, str] = {
     "en": "🇬🇧 English",
+    "de": "🇩🇪 Deutsch",
+    "it": "🇮🇹 Italiano",
     "sr": "🇷🇸 Српски",
     "ru": "🇷🇺 Русский",
     "be": "🇧🇾 Беларуская",
+}
+
+# Языки интерфейса бота
+UI_LANGUAGES: dict[str, str] = {
+    "ru": "🇷🇺 Русский",
+    "en": "🇬🇧 English",
+    "de": "🇩🇪 Deutsch",
+    "it": "🇮🇹 Italiano",
 }
 
 # Уровни CEFR

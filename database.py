@@ -106,6 +106,28 @@ def init_db(settings: Settings) -> None:
 SessionType = Union[AsyncSession, "AsyncCompatSession"]
 
 
+async def _safe_commit(session: SessionType) -> None:
+    """Commit или rollback, если транзакция уже отменена (PendingRollbackError)."""
+    from sqlalchemy.exc import PendingRollbackError
+
+    try:
+        await session.commit()
+    except PendingRollbackError:
+        logger.warning("Сессия была отменена до commit — выполняем rollback")
+        await session.rollback()
+    except Exception:
+        await session.rollback()
+        raise
+
+
+async def rollback_session(session: SessionType) -> None:
+    """Откатывает транзакцию, игнорируя повторный rollback."""
+    try:
+        await session.rollback()
+    except Exception:
+        logger.debug("Rollback session failed", exc_info=True)
+
+
 @asynccontextmanager
 async def session_scope() -> AsyncGenerator[SessionType, None]:
     """Контекстный менеджер сессии — гарантирует commit/rollback."""
@@ -117,9 +139,9 @@ async def session_scope() -> AsyncGenerator[SessionType, None]:
         session = AsyncCompatSession(sync_session_factory())
         try:
             yield session
-            await session.commit()
+            await _safe_commit(session)
         except Exception:
-            await session.rollback()
+            await rollback_session(session)
             raise
         finally:
             await session.close()
@@ -131,9 +153,9 @@ async def session_scope() -> AsyncGenerator[SessionType, None]:
     async with async_session_factory() as session:
         try:
             yield session
-            await session.commit()
+            await _safe_commit(session)
         except Exception:
-            await session.rollback()
+            await rollback_session(session)
             raise
 
 
@@ -147,3 +169,30 @@ async def close_db() -> None:
     """Корректно закрывает пул соединений."""
     if engine is not None:
         await engine.dispose()
+
+
+def migrate_schema(bind) -> None:
+    """Добавляет новые колонки в существующие таблицы (Turso/SQLite)."""
+    from sqlalchemy import inspect, text
+    from sqlalchemy.engine import Engine
+
+    def _apply(conn) -> None:
+        insp = inspect(conn)
+        if "users" not in insp.get_table_names():
+            return
+
+        cols = {c["name"] for c in insp.get_columns("users")}
+        if "ui_language" not in cols:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN ui_language VARCHAR(8) "
+                    "DEFAULT 'ru' NOT NULL"
+                )
+            )
+            logger.info("Migration: added users.ui_language")
+
+    if isinstance(bind, Engine):
+        with bind.begin() as conn:
+            _apply(conn)
+    else:
+        _apply(bind)

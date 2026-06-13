@@ -8,8 +8,11 @@ import logging
 
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import (
     CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     LabeledPrice,
     Message,
     PreCheckoutQuery,
@@ -18,12 +21,68 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
 from services.user_service import UserService
+from utils.i18n import normalize_ui_language
 from utils.keyboards import premium_keyboard
+from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
 router = Router(name="premium")
 
 PREMIUM_PAYLOAD = "premium_subscription_30d"
+
+
+def _premium_prices(price: int) -> list[LabeledPrice]:
+    """Одна позиция в счёте — требование Telegram Stars."""
+    return [LabeledPrice(label="Premium 30 дней", amount=price)]
+
+
+async def send_premium_invoice(bot, chat_id: int, price: int) -> None:
+    """
+    Отправляет счёт Telegram Stars.
+
+    Подписки (subscription_period) нельзя отправлять через sendInvoice —
+    только через createInvoiceLink. Поэтому сначала пробуем ссылку на подписку,
+    затем разовый платёж без автопродления.
+    """
+    title = "Premium Слово Дня"
+    description = "30 дней: словарь, избранное, до 10 слов в день"
+    prices = _premium_prices(price)
+
+    try:
+        link = await bot.create_invoice_link(
+            title=title,
+            description=description,
+            payload=PREMIUM_PAYLOAD,
+            provider_token="",
+            currency="XTR",
+            prices=prices,
+            subscription_period=STAR_SUBSCRIPTION_PERIOD,
+        )
+        await bot.send_message(
+            chat_id,
+            f"⭐ Нажмите кнопку, чтобы оформить Premium за <b>{price} Stars</b> в месяц:",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text=f"⭐ Оплатить {price} Stars", url=link)],
+                ]
+            ),
+        )
+        return
+    except TelegramBadRequest as exc:
+        logger.warning(
+            "create_invoice_link (subscription) failed, fallback to one-time: %s",
+            exc.message,
+        )
+
+    await bot.send_invoice(
+        chat_id=chat_id,
+        title=title,
+        description=description,
+        payload=PREMIUM_PAYLOAD,
+        provider_token="",
+        currency="XTR",
+        prices=prices,
+    )
 
 
 def premium_description(price: int) -> str:
@@ -43,12 +102,15 @@ def premium_description(price: int) -> str:
 
 
 @router.message(Command("premium"))
-@router.message(F.text == "⭐ Премиум")
-async def cmd_premium(message: Message, settings: Settings) -> None:
+@router.message(menu_btn("btn_premium"))
+async def cmd_premium(message: Message, settings: Settings, session: AsyncSession) -> None:
     """Информация о Premium."""
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(message.from_user.id)
+    ui = normalize_ui_language(user.ui_language) if user else "ru"
     await message.answer(
         premium_description(settings.premium_stars_price),
-        reply_markup=premium_keyboard(),
+        reply_markup=premium_keyboard(ui),
     )
 
 
@@ -64,11 +126,14 @@ async def cmd_support(message: Message) -> None:
 
 
 @router.callback_query(F.data == "settings:premium")
-async def settings_premium(callback: CallbackQuery, settings: Settings) -> None:
+async def settings_premium(callback: CallbackQuery, settings: Settings, session: AsyncSession) -> None:
     """Premium из меню настроек."""
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(callback.from_user.id)
+    ui = normalize_ui_language(user.ui_language) if user else "ru"
     await callback.message.edit_text(
         premium_description(settings.premium_stars_price),
-        reply_markup=premium_keyboard(),
+        reply_markup=premium_keyboard(ui),
     )
     await callback.answer()
 
@@ -76,22 +141,23 @@ async def settings_premium(callback: CallbackQuery, settings: Settings) -> None:
 @router.callback_query(F.data == "premium:subscribe")
 async def premium_subscribe(callback: CallbackQuery, settings: Settings) -> None:
     """Отправляет инвойс Telegram Stars."""
+    price = settings.premium_stars_price
+    if price < 1:
+        await callback.answer("Premium временно недоступен.", show_alert=True)
+        return
+
     try:
-        await callback.message.answer_invoice(
-            title="Premium «Слово Дня»",
-            description="Подписка на 30 дней: словарь, избранное, мульти-языки",
-            payload=PREMIUM_PAYLOAD,
-            currency="XTR",
-            prices=[
-                LabeledPrice(
-                    label="Premium 30 дней",
-                    amount=settings.premium_stars_price,
-                )
-            ],
-            subscription_period=STAR_SUBSCRIPTION_PERIOD,
-            provider_token="",
-        )
+        await send_premium_invoice(callback.bot, callback.from_user.id, price)
         await callback.answer()
+    except TelegramBadRequest as exc:
+        logger.error("Ошибка создания инвойса Stars: %s", exc.message)
+        hint = (
+            "Не удалось создать счёт.\n\n"
+            "Проверьте в @BotFather → ваш бот → Payments → Telegram Stars."
+        )
+        if "STARS" in (exc.message or "").upper():
+            hint = f"Не удалось создать счёт: {exc.message}"
+        await callback.answer(hint, show_alert=True)
     except Exception:
         logger.exception("Ошибка создания инвойса Stars")
         await callback.answer(

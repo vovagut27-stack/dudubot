@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.models import WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
-from utils.keyboards import quiz_answer_keyboard
+from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
 router = Router(name="quiz")
@@ -43,7 +43,7 @@ class QuizSessionData:
 
 
 @router.message(Command("quiz"))
-@router.message(F.text == "🎯 Квиз")
+@router.message(menu_btn("btn_quiz"))
 async def cmd_quiz(
     message: Message,
     session: AsyncSession,

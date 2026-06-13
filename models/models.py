@@ -49,7 +49,9 @@ class User(Base):
     # Настройки обучения
     level: Mapped[str] = mapped_column(String(2), default="A1")
     # Языки через запятую: en,sr,ru
-    languages: Mapped[str] = mapped_column(String(64), default="en")
+    languages: Mapped[str] = mapped_column(String(128), default="en")
+    # Язык интерфейса бота: ru, en, de, it
+    ui_language: Mapped[str] = mapped_column(String(8), default="ru")
     notification_time: Mapped[time] = mapped_column(Time, default=time(9, 0))
     timezone: Mapped[str] = mapped_column(String(64), default="Europe/Moscow")
 

@@ -17,6 +17,7 @@ from models.models import User, WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
 from utils.keyboards import word_actions_keyboard
+from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
 router = Router(name="daily")
@@ -116,12 +117,15 @@ async def _send_today_words(
 
 
 @router.message(Command("today"))
-@router.message(F.text == "📚 Слово дня")
+@router.message(menu_btn("btn_today"))
 async def cmd_today(message: Message, session: AsyncSession, word_service: WordService) -> None:
     """Получить слово дня вручную."""
     try:
         await _send_today_words(message, session, word_service)
     except Exception:
+        from database import rollback_session
+
+        await rollback_session(session)
         logger.exception("Ошибка /today для user=%s", message.from_user.id)
         await message.answer("😔 Не удалось получить слово. Попробуйте позже.")
 

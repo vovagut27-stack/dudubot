@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import DAILY_WORDS_FREE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from services.word_service import WordService
+from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
 router = Router(name="stats")
@@ -28,7 +29,7 @@ def _progress_bar(current: int, total: int, length: int = 10) -> str:
 
 
 @router.message(Command("stats"))
-@router.message(F.text == "📊 Статистика")
+@router.message(menu_btn("btn_stats"))
 async def cmd_stats(
     message: Message,
     session: AsyncSession,

@@ -18,6 +18,7 @@ from config import SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from utils.html_escape import h
 from utils.callbacks import parse_time_callback
+from utils.i18n import normalize_ui_language, supported_languages_list, t
 from utils.keyboards import (
     main_menu_keyboard,
     onboarding_languages_keyboard,
@@ -37,13 +38,13 @@ class OnboardingStates(StatesGroup):
     time = State()
 
 
-WELCOME_TEXT = (
-    "👋 <b>Добро пожаловать в «Слово Дня»!</b>\n\n"
-    "Каждый день вы будете получать новое слово на выбранных языках:\n"
-    "🇬🇧 English · 🇷🇸 Српски · 🇷🇺 Русский · 🇧🇾 Беларуская\n\n"
-    "🎮 Зарабатывайте очки, поддерживайте streak и проходите квизы!\n\n"
-    "Давайте настроим ваш профиль 👇"
-)
+def _welcome_text(ui_lang: str = "ru") -> str:
+    """Приветственное сообщение онбординга."""
+    lang = normalize_ui_language(ui_lang)
+    return (
+        f"{t(lang, 'welcome_title')}\n\n"
+        f"{t(lang, 'welcome_body', languages=supported_languages_list())}"
+    )
 
 
 @router.message(CommandStart())
@@ -56,59 +57,65 @@ async def cmd_start(message: Message, session: AsyncSession, state: FSMContext) 
         first_name=message.from_user.first_name,
     )
 
+    ui = normalize_ui_language(user.ui_language)
+
     if user.onboarding_completed:
+        name = h(message.from_user.first_name) or "друг"
         await message.answer(
-            f"С возвращением, {h(message.from_user.first_name) or 'друг'}! 🌟\n"
-            "Используйте меню или команды.",
-            reply_markup=main_menu_keyboard(),
+            t(ui, "welcome_back", name=name),
+            reply_markup=main_menu_keyboard(ui),
         )
         return
 
     await state.set_state(OnboardingStates.level)
     try:
-        await message.answer(WELCOME_TEXT, reply_markup=onboarding_level_keyboard())
+        await message.answer(_welcome_text(ui), reply_markup=onboarding_level_keyboard())
     except Exception:
         logger.exception("Ошибка отправки приветствия user=%s", message.from_user.id)
-        # Fallback без HTML если что-то пошло не так
         await message.answer(
-            "Добро пожаловать в Слово Дня! Выберите уровень:",
+            "Добро пожаловать! Выберите уровень:",
             reply_markup=onboarding_level_keyboard(),
             parse_mode=None,
         )
 
 
 @router.callback_query(F.data.startswith("onboard:level:"))
-async def onboard_level(callback: CallbackQuery, state: FSMContext) -> None:
+async def onboard_level(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     """Выбор уровня CEFR."""
     level = callback.data.split(":")[-1]
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(callback.from_user.id)
+    ui = normalize_ui_language(user.ui_language) if user else "ru"
+
     await state.update_data(level=level)
     await state.set_state(OnboardingStates.languages)
     await state.update_data(selected_langs=[])
 
     await callback.message.edit_text(
-        f"✅ Уровень: <b>{level}</b>\n\n"
-        "🌍 Выберите один или несколько языков для изучения:",
-        reply_markup=onboarding_languages_keyboard(set()),
+        f"{t(ui, 'onboard_level_ok', level=level)}\n\n{t(ui, 'onboard_choose_langs')}",
+        reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
     )
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("onboard:lang:"))
-async def onboard_language(callback: CallbackQuery, state: FSMContext) -> None:
+async def onboard_language(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     """Переключение языка при онбординге."""
     code = callback.data.split(":")[-1]
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(callback.from_user.id)
+    ui = normalize_ui_language(user.ui_language) if user else "ru"
 
     if code == "done":
         data = await state.get_data()
         selected: list[str] = list(data.get("selected_langs", []))
         if not selected:
-            await callback.answer("Выберите хотя бы один язык!", show_alert=True)
+            await callback.answer(t(ui, "settings_select_lang"), show_alert=True)
             return
         await state.set_state(OnboardingStates.time)
         langs = ", ".join(SUPPORTED_LANGUAGES.get(c, c) for c in selected)
         await callback.message.edit_text(
-            f"🌍 Языки: {langs}\n\n"
-            "🕐 В какое время присылать слово дня?",
+            f"{t(ui, 'onboard_langs_ok', langs=langs)}\n\n{t(ui, 'onboard_choose_time')}",
             reply_markup=onboarding_time_keyboard(),
         )
         await callback.answer()
@@ -123,7 +130,7 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(selected_langs=selected)
 
     await callback.message.edit_reply_markup(
-        reply_markup=onboarding_languages_keyboard(set(selected))
+        reply_markup=onboarding_languages_keyboard(set(selected), ui_lang=ui)
     )
     await callback.answer()
 
@@ -155,16 +162,13 @@ async def onboard_time(
     )
     await state.clear()
 
+    ui = normalize_ui_language(user.ui_language)
     langs = ", ".join(SUPPORTED_LANGUAGES.get(c, c) for c in selected)
     await callback.message.edit_text(
-        "🎉 <b>Настройка завершена!</b>\n\n"
-        f"📊 Уровень: <b>{level}</b>\n"
-        f"🌍 Языки: {langs}\n"
-        f"🕐 Уведомления: <b>{time_str}</b>\n\n"
-        "Нажмите /today чтобы получить первое слово!"
+        t(ui, "onboard_done", level=level, langs=langs, time=time_str)
     )
     await callback.message.answer(
-        "Главное меню 👇",
-        reply_markup=main_menu_keyboard(),
+        t(ui, "onboard_main_menu"),
+        reply_markup=main_menu_keyboard(ui),
     )
-    await callback.answer("Готово! 🚀")
+    await callback.answer("🚀")
