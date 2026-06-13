@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import SUPPORTED_LANGUAGES
 from services.user_service import UserService
+from utils.html_escape import h
 from utils.keyboards import (
     main_menu_keyboard,
     onboarding_languages_keyboard,
@@ -56,14 +57,23 @@ async def cmd_start(message: Message, session: AsyncSession, state: FSMContext) 
 
     if user.onboarding_completed:
         await message.answer(
-            f"С возвращением, {message.from_user.first_name or 'друг'}! 🌟\n"
+            f"С возвращением, {h(message.from_user.first_name) or 'друг'}! 🌟\n"
             "Используйте меню или команды.",
             reply_markup=main_menu_keyboard(),
         )
         return
 
     await state.set_state(OnboardingStates.level)
-    await message.answer(WELCOME_TEXT, reply_markup=onboarding_level_keyboard())
+    try:
+        await message.answer(WELCOME_TEXT, reply_markup=onboarding_level_keyboard())
+    except Exception:
+        logger.exception("Ошибка отправки приветствия user=%s", message.from_user.id)
+        # Fallback без HTML если что-то пошло не так
+        await message.answer(
+            "Добро пожаловать в Слово Дня! Выберите уровень:",
+            reply_markup=onboarding_level_keyboard(),
+            parse_mode=None,
+        )
 
 
 @router.callback_query(F.data.startswith("onboard:level:"))

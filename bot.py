@@ -13,6 +13,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import Settings
 from handlers import get_all_routers
+from utils.html_escape import h
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +46,14 @@ def create_dispatcher() -> Dispatcher:
 
         if chat_id:
             try:
+                err = event.exception
+                detail = f"{type(err).__name__}: {err}"
+                logger.error("Handler error for chat %s: %s", chat_id, detail)
                 await bot.send_message(
                     chat_id,
                     "⚠️ Произошла ошибка сервера.\n"
-                    "Проверьте /api/health на Vercel или попробуйте /start снова.",
+                    f"<code>{h(detail[:200])}</code>\n\n"
+                    "Попробуйте /start снова.",
                 )
             except Exception:
                 logger.exception("Не удалось отправить сообщение об ошибке")

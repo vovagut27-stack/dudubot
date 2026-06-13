@@ -52,7 +52,7 @@ class UserService:
         else:
             user.username = username
             user.first_name = first_name
-            user.last_active = datetime.now(timezone.utc)
+            user.last_active = datetime.now(timezone.utc).replace(tzinfo=None)
 
         return user
 
