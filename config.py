@@ -38,10 +38,13 @@ SUPPORT_URL = "https://donatty.com/creator_bots"
 
 def normalize_database_url(url: str) -> str:
     """
-    Приводит URL БД к async-формату для SQLAlchemy.
+    Приводит URL БД к формату для SQLAlchemy.
 
-    Neon/Vercel Postgres часто выдают postgres:// — конвертируем в postgresql+asyncpg://
+    - postgres:// → postgresql+asyncpg://
+    - libsql:// — без изменений (Turso)
     """
+    if url.startswith("libsql://"):
+        return url
     if url.startswith("postgres://"):
         return url.replace("postgres://", "postgresql+asyncpg://", 1)
     if url.startswith("postgresql://") and "+asyncpg" not in url:
@@ -55,11 +58,17 @@ class Settings:
 
     bot_token: str
     database_url: str
+    database_auth_token: str | None
+    turso_embedded_path: Path
     log_level: str
     timezone: str
     premium_stars_price: int
     words_file: Path
     admin_ids: tuple[int, ...] = field(default_factory=tuple)
+
+    def is_turso(self) -> bool:
+        """True, если используется Turso (libsql://)."""
+        return self.database_url.startswith("libsql://")
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -74,9 +83,24 @@ class Settings:
             f"sqlite+aiosqlite:///{BASE_DIR / 'data' / 'bot.db'}",
         )
 
+        auth_token = (
+            os.getenv("TURSO_AUTH_TOKEN")
+            or os.getenv("DATABASE_AUTH_TOKEN")
+            or None
+        )
+
+        default_embedded = (
+            Path("/tmp/turso_bot.db")
+            if os.getenv("VERCEL")
+            else BASE_DIR / "data" / "embedded.db"
+        )
+        embedded = Path(os.getenv("TURSO_EMBEDDED_PATH", str(default_embedded)))
+
         return cls(
             bot_token=os.getenv("BOT_TOKEN", ""),
             database_url=normalize_database_url(db_url),
+            database_auth_token=auth_token,
+            turso_embedded_path=embedded,
             log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
             timezone=os.getenv("TIMEZONE", "Europe/Moscow"),
             premium_stars_price=int(os.getenv("PREMIUM_STARS_PRICE", "150")),
@@ -89,6 +113,11 @@ class Settings:
         if not self.bot_token:
             raise ValueError(
                 "BOT_TOKEN не задан. Скопируйте .env.example в .env и укажите токен."
+            )
+        if self.is_turso() and not self.database_auth_token:
+            raise ValueError(
+                "Для Turso (libsql://) нужен TURSO_AUTH_TOKEN. "
+                "Получите: turso db tokens create <имя-базы> — или в Turso Dashboard."
             )
 
 

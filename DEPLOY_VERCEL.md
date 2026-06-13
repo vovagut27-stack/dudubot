@@ -45,18 +45,36 @@ https://t.me/ВАШ_BOT_USERNAME
 
 ---
 
-## Шаг 2. Создайте базу данных PostgreSQL (Neon)
+## Шаг 2. Создайте базу данных Turso
 
-> SQLite на Vercel **не работает** — данные пользователей пропадут после каждого запроса.
+> SQLite на Vercel **не работает**. Вы используете **Turso** — облачную SQLite.
 
-1. Зайдите на [neon.tech](https://neon.tech) → **Sign Up** (можно через GitHub)
-2. **New Project** → название `word-day-bot` → **Create**
-3. На Dashboard найдите **Connection string** → выберите **URI**
-4. Скопируйте строку вида:
-   ```
-   postgres://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require
-   ```
-5. Это ваш `DATABASE_URL` (код сам преобразует в `postgresql+asyncpg://`)
+### 2.1 Если база уже создана
+Ваш URL:
+```
+libsql://dudu-vovagut27-stack.aws-us-west-2.turso.io
+```
+
+### 2.2 Получите Auth Token (обязательно!)
+Без токена подключение не работает.
+
+**Через CLI:**
+```bash
+# Установите Turso CLI: https://docs.turso.tech/cli
+turso auth login
+turso db tokens create dudu-vovagut27-stack
+```
+
+**Через сайт:**
+1. [turso.tech](https://turso.tech) → Dashboard
+2. Выберите базу **dudu-vovagut27-stack**
+3. **Tokens** → **Create Token**
+4. Скопируйте токен → это `TURSO_AUTH_TOKEN`
+
+---
+
+### Альтернатива: Neon PostgreSQL
+Если Turso не подходит — см. [neon.tech](https://neon.tech) и используйте `DATABASE_URL=postgres://...` без `TURSO_AUTH_TOKEN`.
 
 ---
 
@@ -103,8 +121,9 @@ git push -u origin main
 | Имя | Значение | Пример |
 |-----|----------|--------|
 | `BOT_TOKEN` | Токен от BotFather | `7123456789:AAH...` |
-| `BOT_USERNAME` | Username бота без @ | `my_word_day_bot` |
-| `DATABASE_URL` | Строка из Neon | `postgres://user:pass@ep-...` |
+| `BOT_USERNAME` | Username бота без @ | `DuduDayBot` |
+| `DATABASE_URL` | URL Turso | `libsql://dudu-vovagut27-stack.aws-us-west-2.turso.io` |
+| `TURSO_AUTH_TOKEN` | Токен из Turso Dashboard | `eyJhbG...` |
 | `TIMEZONE` | Часовой пояс | `Europe/Moscow` |
 | `SETUP_SECRET` | Любая случайная строка | `mySetupSecret2024xyz` |
 | `WEBHOOK_SECRET` | Другая случайная строка | `webhookSecretAbc123` |

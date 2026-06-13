@@ -1,11 +1,15 @@
 """
-Асинхронная работа с базой данных через SQLAlchemy 2.0.
+Работа с базой данных через SQLAlchemy 2.0.
 
-Поддерживает SQLite (по умолчанию) и PostgreSQL через DATABASE_URL.
+Поддерживает:
+- SQLite (aiosqlite) — локальная разработка
+- PostgreSQL (asyncpg) — production
+- Turso / libSQL (sqlalchemy-libsql) — облачная SQLite
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -17,28 +21,52 @@ from sqlalchemy.ext.asyncio import (
 
 from config import Settings
 
-# Глобальные объекты инициализируются при старте приложения
+logger = logging.getLogger(__name__)
+
 engine: AsyncEngine | None = None
 async_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
-def init_db(settings: Settings) -> None:
+def _create_turso_engine(settings: Settings) -> AsyncEngine:
     """
-    Создаёт движок и фабрику сессий.
+    Turso через embedded replica: локальный файл + синхронизация с облаком.
 
-    Вызывается один раз при запуске бота.
+    На Vercel используется /tmp/turso_bot.db (см. TURSO_EMBEDDED_PATH).
     """
+    from sqlalchemy import create_engine
+    from sqlalchemy.ext.asyncio import async_engine_from_sync_engine
+
+    settings.turso_embedded_path.parent.mkdir(parents=True, exist_ok=True)
+    embedded = settings.turso_embedded_path.as_posix()
+
+    sync_engine = create_engine(
+        f"sqlite+libsql:///{embedded}",
+        connect_args={
+            "auth_token": settings.database_auth_token,
+            "sync_url": settings.database_url,
+        },
+    )
+    logger.info("Turso: embedded=%s sync=%s", embedded, settings.database_url)
+    return async_engine_from_sync_engine(sync_engine)
+
+
+def init_db(settings: Settings) -> None:
+    """Создаёт движок и фабрику сессий."""
     global engine, async_session_factory
 
-    connect_args: dict = {}
-    if settings.database_url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
+    if settings.is_turso():
+        engine = _create_turso_engine(settings)
+    else:
+        connect_args: dict = {}
+        if settings.database_url.startswith("sqlite"):
+            connect_args["check_same_thread"] = False
 
-    engine = create_async_engine(
-        settings.database_url,
-        echo=False,
-        connect_args=connect_args,
-    )
+        engine = create_async_engine(
+            settings.database_url,
+            echo=False,
+            connect_args=connect_args,
+        )
+
     async_session_factory = async_sessionmaker(
         engine,
         class_=AsyncSession,
