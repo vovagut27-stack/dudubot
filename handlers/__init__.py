@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from aiogram import Router
 
+from handlers.appss import router as appss_router
 from handlers.daily import router as daily_router
 from handlers.dictionary import router as dictionary_router
 from handlers.middleware import DatabaseMiddleware
@@ -23,6 +24,7 @@ def get_all_routers() -> list[Router]:
     """Возвращает список роутеров с подключённым middleware."""
     global _middleware_attached
     routers = [
+        appss_router,
         start_router,
         daily_router,
         stats_router,
