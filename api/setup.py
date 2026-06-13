@@ -1,0 +1,79 @@
+"""
+Однократная регистрация webhook в Telegram (откройте в браузере после деплоя).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import sys
+from http.server import BaseHTTPRequestHandler
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from aiogram.types import WebhookInfo
+
+
+async def _setup_webhook() -> dict:
+    from bootstrap import get_application, set_bot_commands
+
+    settings_secret = os.getenv("SETUP_SECRET", "")
+    if not settings_secret:
+        raise ValueError("SETUP_SECRET не задан в переменных окружения Vercel")
+
+    bot, _, _, settings = await get_application()
+    await set_bot_commands(bot)
+
+    vercel_url = os.getenv("VERCEL_URL") or os.getenv("WEBHOOK_BASE_URL", "")
+    if not vercel_url:
+        raise ValueError("VERCEL_URL или WEBHOOK_BASE_URL не задан")
+
+    if not vercel_url.startswith("https://"):
+        vercel_url = f"https://{vercel_url}"
+
+    webhook_url = f"{vercel_url.rstrip('/')}/api/webhook"
+    secret = os.getenv("WEBHOOK_SECRET", "")
+
+    await bot.set_webhook(
+        url=webhook_url,
+        secret_token=secret or None,
+        drop_pending_updates=True,
+    )
+
+    info: WebhookInfo = await bot.get_webhook_info()
+    return {
+        "webhook_url": webhook_url,
+        "telegram_url": info.url,
+        "pending_updates": info.pending_update_count,
+    }
+
+
+class handler(BaseHTTPRequestHandler):
+    """GET /api/setup?secret=ВАШ_SETUP_SECRET"""
+
+    def do_GET(self) -> None:
+        from urllib.parse import parse_qs, urlparse
+
+        query = parse_qs(urlparse(self.path).query)
+        secret = (query.get("secret") or [""])[0]
+        expected = os.getenv("SETUP_SECRET", "")
+
+        if not expected or secret != expected:
+            self.send_response(403)
+            self.end_headers()
+            self.wfile.write(b"Forbidden: wrong or missing ?secret=")
+            return
+
+        try:
+            result = asyncio.run(_setup_webhook())
+            body = json.dumps({"ok": True, **result}, ensure_ascii=False, indent=2)
+            status = 200
+        except Exception as exc:
+            body = json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False)
+            status = 500
+
+        self.send_response(status)
+        self.send_header("Content-type", "application/json; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(body.encode("utf-8"))

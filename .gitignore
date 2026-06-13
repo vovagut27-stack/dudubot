@@ -1,0 +1,17 @@
+# Секреты
+.env
+.env.local
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Vercel
+.vercel
+
+# IDE
+.idea/
+.vscode/

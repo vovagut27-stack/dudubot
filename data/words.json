@@ -1,0 +1,238 @@
+{
+  "words": [
+    {
+      "key": "en_a1_hello",
+      "language": "en",
+      "level": "A1",
+      "word": "hello",
+      "translation": "привет, здравствуйте",
+      "transcription": "/həˈloʊ/",
+      "part_of_speech": "interjection",
+      "examples": [
+        "Hello! How are you?",
+        "She said hello to everyone in the room."
+      ]
+    },
+    {
+      "key": "en_a1_book",
+      "language": "en",
+      "level": "A1",
+      "word": "book",
+      "translation": "книга",
+      "transcription": "/bʊk/",
+      "part_of_speech": "noun",
+      "examples": [
+        "I read a book every evening.",
+        "This book is very interesting."
+      ]
+    },
+    {
+      "key": "en_a2_journey",
+      "language": "en",
+      "level": "A2",
+      "word": "journey",
+      "translation": "путешествие, поездка",
+      "transcription": "/ˈdʒɜːrni/",
+      "part_of_speech": "noun",
+      "examples": [
+        "The journey took three hours.",
+        "Life is a journey, not a destination."
+      ]
+    },
+    {
+      "key": "en_b1_achieve",
+      "language": "en",
+      "level": "B1",
+      "word": "achieve",
+      "translation": "достигать, добиваться",
+      "transcription": "/əˈtʃiːv/",
+      "part_of_speech": "verb",
+      "examples": [
+        "She achieved her goal through hard work.",
+        "We need to achieve better results."
+      ]
+    },
+    {
+      "key": "en_b2_ambiguous",
+      "language": "en",
+      "level": "B2",
+      "word": "ambiguous",
+      "translation": "двусмысленный, неоднозначный",
+      "transcription": "/æmˈbɪɡjuəs/",
+      "part_of_speech": "adjective",
+      "examples": [
+        "His answer was deliberately ambiguous.",
+        "The instructions were ambiguous and confusing."
+      ]
+    },
+    {
+      "key": "en_c1_ephemeral",
+      "language": "en",
+      "level": "C1",
+      "word": "ephemeral",
+      "translation": "эфемерный, недолговечный",
+      "transcription": "/ɪˈfemərəl/",
+      "part_of_speech": "adjective",
+      "examples": [
+        "Fame can be ephemeral.",
+        "The beauty of cherry blossoms is ephemeral."
+      ]
+    },
+    {
+      "key": "sr_a1_zdravo",
+      "language": "sr",
+      "level": "A1",
+      "word": "zdravo",
+      "translation": "привет, здравствуй",
+      "transcription": "[zdraːvo]",
+      "part_of_speech": "interjection",
+      "examples": [
+        "Zdravo! Kako si?",
+        "Zdravo, drago mi je da te vidim."
+      ]
+    },
+    {
+      "key": "sr_a1_knjiga",
+      "language": "sr",
+      "level": "A1",
+      "word": "knjiga",
+      "translation": "книга",
+      "transcription": "[knjiːɡa]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Ova knjiga je veoma zanimljiva.",
+        "Čitam knjigu svake večeri."
+      ]
+    },
+    {
+      "key": "sr_a2_putovanje",
+      "language": "sr",
+      "level": "A2",
+      "word": "putovanje",
+      "translation": "путешествие",
+      "transcription": "[putovaːnje]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Putovanje je bilo divno.",
+        "Volim putovanja u inostranstvo."
+      ]
+    },
+    {
+      "key": "sr_b1_postignuće",
+      "language": "sr",
+      "level": "B1",
+      "word": "postignuće",
+      "translation": "достижение",
+      "transcription": "[postiɡnuːtɕe]",
+      "part_of_speech": "noun",
+      "examples": [
+        "To je veliko postignuće.",
+        "Njegovo postignuće je impresivno."
+      ]
+    },
+    {
+      "key": "ru_a1_привет",
+      "language": "ru",
+      "level": "A1",
+      "word": "привет",
+      "translation": "hello, hi",
+      "transcription": "[prʲɪˈvʲet]",
+      "part_of_speech": "interjection",
+      "examples": [
+        "Привет! Как дела?",
+        "Он махнул рукой и сказал: «Привет!»"
+      ]
+    },
+    {
+      "key": "ru_a1_книга",
+      "language": "ru",
+      "level": "A1",
+      "word": "книга",
+      "translation": "book",
+      "transcription": "[knʲɪˈɡa]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Я читаю интересную книгу.",
+        "Эта книга лежит на столе."
+      ]
+    },
+    {
+      "key": "ru_a2_путешествие",
+      "language": "ru",
+      "level": "A2",
+      "word": "путешествие",
+      "translation": "journey, trip",
+      "transcription": "[putʲɪˈʂestvʲɪje]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Наше путешествие длилось две недели.",
+        "Она мечтает о путешествии по Европе."
+      ]
+    },
+    {
+      "key": "ru_b1_достижение",
+      "language": "ru",
+      "level": "B1",
+      "word": "достижение",
+      "translation": "achievement",
+      "transcription": "[dəsʲtʲɪˈʐenʲɪje]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Это важное достижение для нашей команды.",
+        "Его достижения в науке известны всем."
+      ]
+    },
+    {
+      "key": "be_a1_привітанне",
+      "language": "be",
+      "level": "A1",
+      "word": "прывітанне",
+      "translation": "greeting, hello",
+      "transcription": "[prɨvʲiˈtanʲnʲe]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Прывітанне! Як справы?",
+        "Ён пакінуў прывітанне."
+      ]
+    },
+    {
+      "key": "be_a1_кніга",
+      "language": "be",
+      "level": "A1",
+      "word": "кніга",
+      "translation": "book",
+      "transcription": "[knʲiˈɣa]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Я чытаю цікавую кнігу.",
+        "Гэта кніга на стале."
+      ]
+    },
+    {
+      "key": "be_a2_падарожжа",
+      "language": "be",
+      "level": "A2",
+      "word": "падарожжа",
+      "translation": "journey, trip",
+      "transcription": "[padaroˈʐʐa]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Нашае падарожжа было цудоўным.",
+        "Я люблю падарожжы."
+      ]
+    },
+    {
+      "key": "be_b1_дасягненне",
+      "language": "be",
+      "level": "B1",
+      "word": "дасягненне",
+      "translation": "achievement",
+      "transcription": "[dasʲaɣˈnʲenʲnʲe]",
+      "part_of_speech": "noun",
+      "examples": [
+        "Гэта вялікае дасягненне.",
+        "Яго дасягненні ў навуцы вядомыя."
+      ]
+    }
+  ]
+}
