@@ -39,6 +39,10 @@ async def _show_dictionary_page(
     user = await user_service.get_by_telegram_id(telegram_id)
 
     if user is None:
+        if edit:
+            await target.edit_text("Сначала пройдите онбординг: /start")
+        else:
+            await target.answer("Сначала пройдите онбординг: /start")
         return
 
     if not user_service.is_premium_active(user):
@@ -59,10 +63,14 @@ async def _show_dictionary_page(
 
     progress = await user_service.get_learned_words(user.id, limit=200)
     if not progress:
-        await target.answer(
+        empty_text = (
             "📖 Ваш словарь пока пуст.\n"
             "Добавляйте слова кнопкой «📖 В словарь» под словом дня!"
         )
+        if edit:
+            await target.edit_text(empty_text)
+        else:
+            await target.answer(empty_text)
         return
 
     total_pages = max(1, math.ceil(len(progress) / PAGE_SIZE))
@@ -134,7 +142,12 @@ async def dict_view_word(
     word_service: WordService,
 ) -> None:
     """Просмотр слова из словаря."""
-    word_key = word_key_from_callback(callback.data, "dict:view:")
+    try:
+        word_key = word_key_from_callback(callback.data, "dict:view:")
+    except ValueError:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
+
     word = word_service.get_by_key(word_key)
     if word is None:
         await callback.answer("Слово не найдено", show_alert=True)

@@ -8,6 +8,7 @@ import logging
 import random
 from enum import StrEnum
 
+from aiogram.exceptions import TelegramBadRequest
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -304,6 +305,16 @@ async def quiz_answer(
 
     await state.update_data(current=current, score=score)
     next_word = word_service.get_by_key(questions_keys[current])
-    if next_word:
+    if next_word is None:
+        logger.warning("Quiz missing word key: %s", questions_keys[current])
+        await callback.message.edit_text(
+            "😔 Квиз прерван: слово не найдено в словаре. Начните заново: /quiz"
+        )
+        await state.clear()
+        return
+
+    try:
         await callback.message.delete()
-        await _send_question(callback.message, next_word, word_service, state)
+    except TelegramBadRequest:
+        pass
+    await _send_question(callback.message, next_word, word_service, state)

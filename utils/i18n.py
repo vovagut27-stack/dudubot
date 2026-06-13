@@ -237,6 +237,12 @@ def t(locale: str, message_key: str, **format_kwargs: str) -> str:
     Первый аргумент — код языка интерфейса (`locale`), не путать с плейсхолдерами
     вроде ``{ui_name}`` в шаблонах.
     """
+    reserved = {"locale", "message_key"}
+    conflict = reserved & format_kwargs.keys()
+    if conflict:
+        names = ", ".join(sorted(conflict))
+        raise TypeError(f"t() got reserved format kwargs: {names}")
+
     locale = normalize_ui_language(locale)
     text = MESSAGES.get(locale, MESSAGES[DEFAULT_UI_LANGUAGE]).get(
         message_key, MESSAGES[DEFAULT_UI_LANGUAGE][message_key]

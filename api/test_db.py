@@ -38,9 +38,14 @@ async def _test_db() -> dict:
 
 
 class handler(BaseHTTPRequestHandler):
-    """GET /api/test_db"""
+    """GET /api/test_db?secret=SETUP_SECRET"""
 
     def do_GET(self) -> None:
+        from api._setup_auth import verify_setup_secret
+
+        if not verify_setup_secret(self):
+            return
+
         try:
             result = asyncio.run(_test_db())
             body = json.dumps(result, ensure_ascii=False, indent=2)

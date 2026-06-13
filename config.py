@@ -40,6 +40,11 @@ UI_LANGUAGES: dict[str, str] = {
 # Уровни CEFR
 CEFR_LEVELS: tuple[str, ...] = ("A1", "A2", "B1", "B2", "C1", "C2")
 
+# Допустимое время уведомлений (HH:MM)
+NOTIFICATION_TIMES: frozenset[str] = frozenset(
+    {"07:00", "08:00", "09:00", "12:00", "18:00", "20:00", "21:00"}
+)
+
 # Время подписки Telegram Stars (30 дней в секундах — требование Bot API)
 STAR_SUBSCRIPTION_PERIOD = 2_592_000
 

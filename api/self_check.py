@@ -17,29 +17,40 @@ def _check_imports() -> dict:
     errors: list[str] = []
     checks: dict[str, str] = {}
 
-    keyboard_names = [
-        "main_menu_keyboard",
-        "onboarding_level_keyboard",
-        "onboarding_languages_keyboard",
-        "onboarding_time_keyboard",
-        "settings_keyboard",
-        "settings_level_keyboard",
-        "settings_time_keyboard",
-        "settings_languages_keyboard",
-        "settings_ui_language_keyboard",
-        "word_actions_keyboard",
-        "quiz_answer_keyboard",
-        "quiz_menu_keyboard",
-        "premium_keyboard",
-        "dictionary_keyboard",
-    ]
+    keyboard_builders: dict[str, tuple] = {
+        "main_menu_keyboard": ("ru",),
+        "onboarding_level_keyboard": (),
+        "onboarding_languages_keyboard": (set(),),
+        "onboarding_time_keyboard": (),
+        "settings_keyboard": ("ru",),
+        "settings_level_keyboard": ("ru",),
+        "settings_time_keyboard": ("ru",),
+        "settings_languages_keyboard": (set(),),
+        "settings_ui_language_keyboard": ("ru",),
+        "word_actions_keyboard": ("test_word",),
+        "quiz_answer_keyboard": ([("test:0", "A")],),
+        "quiz_menu_keyboard": (),
+        "premium_keyboard": ("ru",),
+        "dictionary_keyboard": ([], 0, 1),
+    }
 
     try:
         from utils import kb
 
-        for name in keyboard_names:
+        for name, args in keyboard_builders.items():
             fn = getattr(kb, name)
-            checks[name] = "ok" if callable(fn) else "not callable"
+            if not callable(fn):
+                checks[name] = "not callable"
+                continue
+            if name == "onboarding_languages_keyboard":
+                fn(*args, ui_lang="ru")
+            elif name == "settings_languages_keyboard":
+                fn(*args, ui_lang="ru")
+            elif name == "quiz_menu_keyboard":
+                fn(is_premium=False)
+            else:
+                fn(*args)
+            checks[name] = "ok"
     except Exception as exc:
         errors.append(f"kb import: {exc}")
 

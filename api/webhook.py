@@ -27,6 +27,9 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
 
     t0 = time.perf_counter()
     expected_secret = os.getenv("WEBHOOK_SECRET", "")
+    if os.getenv("VERCEL") and not expected_secret:
+        logger.error("WEBHOOK_SECRET не задан на Vercel")
+        return 503, "Webhook misconfigured: WEBHOOK_SECRET required"
     if expected_secret and secret_header != expected_secret:
         logger.warning("Webhook 403: неверный WEBHOOK_SECRET")
         return 403, "Forbidden: WEBHOOK_SECRET mismatch"

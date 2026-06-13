@@ -15,7 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import SUPPORTED_LANGUAGES
+from config import CEFR_LEVELS, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from utils.html_escape import h
 from utils.callbacks import parse_time_callback
@@ -98,12 +98,26 @@ async def cmd_start(message: Message, session: AsyncSession, state: FSMContext) 
         )
 
 
+async def _reject_onboarded(callback: CallbackQuery, user) -> bool:
+    """True — если онбординг уже завершён и callback нужно отклонить."""
+    if user is not None and user.onboarding_completed:
+        await callback.answer("Настройка уже завершена. Используйте /settings", show_alert=True)
+        return True
+    return False
+
+
 @router.callback_query(F.data.startswith("onboard:level:"))
 async def onboard_level(callback: CallbackQuery, state: FSMContext, session: AsyncSession) -> None:
     """Выбор уровня CEFR."""
     level = callback.data.split(":")[-1]
+    if level not in CEFR_LEVELS:
+        await callback.answer("Неверный уровень", show_alert=True)
+        return
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
+    if await _reject_onboarded(callback, user):
+        return
     ui = normalize_ui_language(user.ui_language) if user else "ru"
 
     await state.update_data(level=level)
@@ -123,6 +137,8 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
     code = callback.data.split(":")[-1]
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
+    if await _reject_onboarded(callback, user):
+        return
     ui = normalize_ui_language(user.ui_language) if user else "ru"
 
     if code == "done":
@@ -138,6 +154,10 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
             reply_markup=onboarding_time_keyboard(),
         )
         await callback.answer()
+        return
+
+    if code not in SUPPORTED_LANGUAGES:
+        await callback.answer("Неизвестный язык", show_alert=True)
         return
 
     data = await state.get_data()
@@ -161,17 +181,32 @@ async def onboard_time(
     session: AsyncSession,
 ) -> None:
     """Завершение онбординга — сохранение настроек."""
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(callback.from_user.id)
+    if await _reject_onboarded(callback, user):
+        return
+
     try:
         hours, minutes, time_str = parse_time_callback(callback.data, "onboard:time:")
     except ValueError:
         await callback.answer("Неверное время", show_alert=True)
         return
 
-    data = await state.get_data()
-    level = data.get("level", "A1")
-    selected: list[str] = list(data.get("selected_langs", ["en"]))
+    if time_str not in NOTIFICATION_TIMES:
+        await callback.answer("Неверное время", show_alert=True)
+        return
 
-    user_service = UserService(session)
+    data = await state.get_data()
+    level = data.get("level")
+    selected: list[str] = [
+        code for code in data.get("selected_langs", []) if code in SUPPORTED_LANGUAGES
+    ]
+
+    if level not in CEFR_LEVELS or not selected:
+        await callback.answer("Начните онбординг заново: /start", show_alert=True)
+        await state.clear()
+        return
+
     user = await user_service.get_or_create(
         telegram_id=callback.from_user.id,
         username=callback.from_user.username,

@@ -86,10 +86,7 @@ async def send_daily_word_to_user(
     for idx, word in enumerate(words, start=1):
         try:
             progress = await user_service.get_word_progress(user.id, word.key)
-            in_dict = progress is not None and progress.status in (
-                WordStatus.FAVORITE.value,
-                WordStatus.LEARNED.value,
-            )
+            in_dict = progress is not None and progress.status == WordStatus.FAVORITE.value
 
             lang_label = SUPPORTED_LANGUAGES.get(word.language, word.language)
             header = f"📚 {idx}/{len(words)} · {lang_label}"
@@ -191,7 +188,12 @@ async def word_unknown(
     session: AsyncSession,
     word_service: WordService,
 ) -> None:
-    word_key = word_key_from_callback(callback.data, "word:unknown:")
+    try:
+        word_key = word_key_from_callback(callback.data, "word:unknown:")
+    except ValueError:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     if user is None:
@@ -209,7 +211,12 @@ async def word_examples(
     callback: CallbackQuery,
     word_service: WordService,
 ) -> None:
-    word_key = word_key_from_callback(callback.data, "word:examples:")
+    try:
+        word_key = word_key_from_callback(callback.data, "word:examples:")
+    except ValueError:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
+
     word = word_service.get_by_key(word_key)
     if word is None:
         await callback.answer("Слово не найдено", show_alert=True)
@@ -225,7 +232,12 @@ async def word_add_dictionary(
     session: AsyncSession,
     word_service: WordService,
 ) -> None:
-    word_key = word_key_from_callback(callback.data, "word:dict:")
+    try:
+        word_key = word_key_from_callback(callback.data, "word:dict:")
+    except ValueError:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
 

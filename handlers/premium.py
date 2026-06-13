@@ -201,6 +201,9 @@ async def successful_payment(
     )
 
     if not activated:
+        await message.answer(
+            "ℹ️ Этот платёж уже был обработан ранее. Premium активен."
+        )
         return
 
     until = user.premium_until.strftime("%d.%m.%Y") if user.premium_until else "—"
