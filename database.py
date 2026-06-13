@@ -223,23 +223,28 @@ def _run_schema_patches(conn) -> list[str]:
     return applied
 
 
+def _run_schema_on_connection(conn) -> list[str]:
+    """Создаёт таблицы и применяет патчи в одном соединении."""
+    from models.models import Base
+
+    if not _table_exists(conn, "users"):
+        Base.metadata.create_all(bind=conn)
+        logger.info("Created database tables")
+    return _run_schema_patches(conn)
+
+
 def prepare_schema(bind) -> list[str]:
     """
     Создаёт таблицы (если их нет) и применяет миграции колонок.
 
-    Одно соединение + AUTOCOMMIT — минимум round-trip к Turso на cold start.
+    Turso/libSQL не поддерживает isolation_level=AUTOCOMMIT — используем begin().
     """
     from sqlalchemy.engine import Engine
 
-    from models.models import Base
-
     engine = bind if isinstance(bind, Engine) else bind.engine
 
-    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
-        if not _table_exists(conn, "users"):
-            Base.metadata.create_all(bind=conn)
-            logger.info("Created database tables")
-        return _run_schema_patches(conn)
+    with engine.begin() as conn:
+        return _run_schema_on_connection(conn)
 
 
 def migrate_schema(bind) -> list[str]:
@@ -248,7 +253,7 @@ def migrate_schema(bind) -> list[str]:
 
     engine = bind if isinstance(bind, Engine) else bind.engine
 
-    with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+    with engine.begin() as conn:
         if not _table_exists(conn, "users"):
             return []
         return _run_schema_patches(conn)
