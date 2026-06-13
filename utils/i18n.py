@@ -231,10 +231,14 @@ def normalize_ui_language(code: str | None) -> str:
     return DEFAULT_UI_LANGUAGE
 
 
-def t(ui_lang: str, message_key: str, **format_kwargs: str) -> str:
-    """Перевод строки по ключу."""
-    ui_lang = normalize_ui_language(ui_lang)
-    text = MESSAGES.get(ui_lang, MESSAGES[DEFAULT_UI_LANGUAGE]).get(
+def t(locale: str, message_key: str, **format_kwargs: str) -> str:
+    """Перевод строки по ключу.
+
+    Первый аргумент — код языка интерфейса (`locale`), не путать с плейсхолдерами
+    вроде ``{ui_name}`` в шаблонах.
+    """
+    locale = normalize_ui_language(locale)
+    text = MESSAGES.get(locale, MESSAGES[DEFAULT_UI_LANGUAGE]).get(
         message_key, MESSAGES[DEFAULT_UI_LANGUAGE][message_key]
     )
     return text.format(**format_kwargs) if format_kwargs else text
