@@ -16,9 +16,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 async def _test_start() -> dict:
     from aiogram.types import Update
-    from bootstrap import get_application
+    from bot import create_bot, create_dispatcher
+    from config import get_settings
 
-    bot, dp, _, _ = await get_application()
+    settings = get_settings()
+    bot = create_bot(settings)
+    dp = create_dispatcher()  # отдельный dispatcher — не трогаем production singleton
 
     payload = {
         "update_id": 1234567890,
@@ -37,29 +40,24 @@ async def _test_start() -> dict:
         },
     }
 
-    caught: list[str] = []
+    errors: list[str] = []
 
-    # Перехват ошибок dispatcher
     from aiogram.types import ErrorEvent
 
     @dp.errors()
     async def _capture(event: ErrorEvent, bot_instance) -> bool:
-        caught.append(f"{type(event.exception).__name__}: {event.exception}")
+        errors.append(f"{type(event.exception).__name__}: {event.exception}")
         return True
 
     try:
         update = Update.model_validate(payload, context={"bot": bot})
         await dp.feed_update(bot, update)
     except Exception as exc:
-        caught.append(f"feed_update: {type(exc).__name__}: {exc}")
+        errors.append(f"feed_update: {type(exc).__name__}: {exc}")
     finally:
         await bot.session.close()
 
-    return {
-        "ok": len(caught) == 0,
-        "errors": caught,
-        "traceback": traceback.format_exc() if caught else None,
-    }
+    return {"ok": len(errors) == 0, "errors": errors}
 
 
 class handler(BaseHTTPRequestHandler):
