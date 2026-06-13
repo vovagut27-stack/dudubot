@@ -19,7 +19,7 @@ from models.models import User
 from services.user_service import UserService
 from utils.callbacks import parse_time_callback
 from utils.i18n import normalize_ui_language, t
-from utils.keyboards import (
+from utils.kb import (
     main_menu_keyboard,
     settings_keyboard,
     settings_languages_keyboard,
@@ -139,7 +139,12 @@ async def settings_time_menu(callback: CallbackQuery, session: AsyncSession) -> 
 @router.callback_query(F.data.startswith("settings:set_time:"))
 async def settings_set_time(callback: CallbackQuery, session: AsyncSession) -> None:
     """Сохранение времени уведомлений."""
-    h, m, time_str = parse_time_callback(callback.data, "settings:set_time:")
+    try:
+        h, m, time_str = parse_time_callback(callback.data, "settings:set_time:")
+    except ValueError:
+        await callback.answer("Неверное время", show_alert=True)
+        return
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     ui = normalize_ui_language(user.ui_language) if user else "ru"

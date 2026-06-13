@@ -14,7 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.user_service import UserService
 from services.word_service import WordService
+from utils.callback_keys import word_key_from_callback
 from utils.i18n import normalize_ui_language
+from utils.kb import dictionary_keyboard, premium_keyboard, word_actions_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -33,8 +35,6 @@ async def _show_dictionary_page(
     edit: bool = False,
 ) -> None:
     """Отображает страницу личного словаря."""
-    from utils.keyboards import dictionary_keyboard, premium_keyboard
-
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(telegram_id)
 
@@ -134,13 +134,11 @@ async def dict_view_word(
     word_service: WordService,
 ) -> None:
     """Просмотр слова из словаря."""
-    word_key = callback.data.split(":")[-1]
+    word_key = word_key_from_callback(callback.data, "dict:view:")
     word = word_service.get_by_key(word_key)
     if word is None:
         await callback.answer("Слово не найдено", show_alert=True)
         return
-
-    from utils.keyboards import word_actions_keyboard
 
     await callback.message.answer(
         word_service.format_word_message(word, header="📖 Из словаря"),

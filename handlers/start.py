@@ -20,7 +20,7 @@ from services.user_service import UserService
 from utils.html_escape import h
 from utils.callbacks import parse_time_callback
 from utils.i18n import normalize_ui_language, supported_languages_list, t
-from utils.keyboards import (
+from utils.kb import (
     main_menu_keyboard,
     onboarding_languages_keyboard,
     onboarding_level_keyboard,
@@ -161,7 +161,11 @@ async def onboard_time(
     session: AsyncSession,
 ) -> None:
     """Завершение онбординга — сохранение настроек."""
-    hours, minutes, time_str = parse_time_callback(callback.data, "onboard:time:")
+    try:
+        hours, minutes, time_str = parse_time_callback(callback.data, "onboard:time:")
+    except ValueError:
+        await callback.answer("Неверное время", show_alert=True)
+        return
 
     data = await state.get_data()
     level = data.get("level", "A1")

@@ -19,7 +19,7 @@ from models.models import WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
 from utils.html_escape import h
-from utils.keyboards import quiz_answer_keyboard
+from utils.kb import quiz_answer_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -101,8 +101,6 @@ async def _send_question(
     state: FSMContext,
 ) -> None:
     """Отправляет вопрос квиза."""
-    from utils.keyboards import quiz_answer_keyboard
-
     wrong = word_service.pick_quiz_options(word, word.language, word.level, count=3)
     options_text = [word.translation] + wrong
     random.shuffle(options_text)

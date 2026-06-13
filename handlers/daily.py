@@ -17,7 +17,8 @@ from config import DAILY_WORDS_FREE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
 from models.models import User, WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
-from utils.keyboards import word_actions_keyboard
+from utils.callback_keys import word_key_from_callback
+from utils.kb import word_actions_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -161,7 +162,12 @@ async def word_learned(
     word_service: WordService,
 ) -> None:
     """Пользователь отметил слово как выученное."""
-    word_key = callback.data.split(":")[-1]
+    try:
+        word_key = word_key_from_callback(callback.data, "word:learned:")
+    except ValueError:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
+
     word = word_service.get_by_key(word_key)
     if word is None:
         await callback.answer("Слово не найдено", show_alert=True)
@@ -185,8 +191,7 @@ async def word_unknown(
     session: AsyncSession,
     word_service: WordService,
 ) -> None:
-    """Пользователь не знает слово."""
-    word_key = callback.data.split(":")[-1]
+    word_key = word_key_from_callback(callback.data, "word:unknown:")
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     if user is None:
@@ -204,8 +209,7 @@ async def word_examples(
     callback: CallbackQuery,
     word_service: WordService,
 ) -> None:
-    """Показать примеры использования слова."""
-    word_key = callback.data.split(":")[-1]
+    word_key = word_key_from_callback(callback.data, "word:examples:")
     word = word_service.get_by_key(word_key)
     if word is None:
         await callback.answer("Слово не найдено", show_alert=True)
@@ -221,8 +225,7 @@ async def word_add_dictionary(
     session: AsyncSession,
     word_service: WordService,
 ) -> None:
-    """Добавить слово в личный словарь (премиум)."""
-    word_key = callback.data.split(":")[-1]
+    word_key = word_key_from_callback(callback.data, "word:dict:")
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
 

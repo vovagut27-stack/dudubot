@@ -16,8 +16,12 @@ from handlers.start import router as start_router
 from handlers.stats import router as stats_router
 
 
+_middleware_attached = False
+
+
 def get_all_routers() -> list[Router]:
     """Возвращает список роутеров с подключённым middleware."""
+    global _middleware_attached
     routers = [
         start_router,
         daily_router,
@@ -28,10 +32,12 @@ def get_all_routers() -> list[Router]:
         premium_router,
     ]
 
-    db_middleware = DatabaseMiddleware()
-    for r in routers:
-        r.message.middleware(db_middleware)
-        r.callback_query.middleware(db_middleware)
-        r.pre_checkout_query.middleware(db_middleware)
+    if not _middleware_attached:
+        db_middleware = DatabaseMiddleware()
+        for r in routers:
+            r.message.middleware(db_middleware)
+            r.callback_query.middleware(db_middleware)
+            r.pre_checkout_query.middleware(db_middleware)
+        _middleware_attached = True
 
     return routers

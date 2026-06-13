@@ -86,10 +86,17 @@ async def set_bot_commands(bot) -> None:
 
 
 def _get_dispatcher():
-    """Singleton Dispatcher — роутеры подключаются только один раз."""
+    """Singleton Dispatcher; пересоздаётся после нового деплоя на Vercel."""
     global _dispatcher
-    if _dispatcher is None:
+    deploy_id = (
+        os.getenv("VERCEL_GIT_COMMIT_SHA")
+        or os.getenv("VERCEL_DEPLOYMENT_ID")
+        or "local"
+    )
+    if _dispatcher is None or getattr(_dispatcher, "_deploy_id", None) != deploy_id:
         _dispatcher = create_dispatcher()
+        _dispatcher._deploy_id = deploy_id
+        logger.info("Dispatcher initialized deploy_id=%s", deploy_id[:12])
     return _dispatcher
 
 
