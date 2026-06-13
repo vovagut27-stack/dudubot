@@ -15,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from services.user_service import UserService
 from services.word_service import WordService
 from utils.i18n import normalize_ui_language
-from utils.keyboards import dictionary_keyboard, premium_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -34,6 +33,8 @@ async def _show_dictionary_page(
     edit: bool = False,
 ) -> None:
     """Отображает страницу личного словаря."""
+    from utils.keyboards import dictionary_keyboard, premium_keyboard
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(telegram_id)
 

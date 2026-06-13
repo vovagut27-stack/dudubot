@@ -22,7 +22,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
 from services.user_service import UserService
 from utils.i18n import normalize_ui_language
-from utils.keyboards import premium_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -105,6 +104,8 @@ def premium_description(price: int) -> str:
 @router.message(menu_btn("btn_premium"))
 async def cmd_premium(message: Message, settings: Settings, session: AsyncSession) -> None:
     """Информация о Premium."""
+    from utils.keyboards import premium_keyboard
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(message.from_user.id)
     ui = normalize_ui_language(user.ui_language) if user else "ru"
@@ -128,6 +129,8 @@ async def cmd_support(message: Message) -> None:
 @router.callback_query(F.data == "settings:premium")
 async def settings_premium(callback: CallbackQuery, settings: Settings, session: AsyncSession) -> None:
     """Premium из меню настроек."""
+    from utils.keyboards import premium_keyboard
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     ui = normalize_ui_language(user.ui_language) if user else "ru"
