@@ -48,7 +48,7 @@ def _settings_text(user: User) -> str:
         f"{t(ui, 'settings_title')}\n\n"
         f"{t(ui, 'settings_level_line', level=user.level)}\n"
         f"{t(ui, 'settings_langs_line', langs=langs)}\n"
-        f"{t(ui, 'settings_ui_line', ui_lang=ui_name)}\n"
+        f"{t(ui, 'settings_ui_line', ui_name=ui_name)}\n"
         f"{t(ui, 'settings_time_line', time=user.notification_time.strftime('%H:%M'))}"
     )
 

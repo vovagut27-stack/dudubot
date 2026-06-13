@@ -50,6 +50,14 @@ SUPPORT_URL = "https://donatty.com/creator_bots"
 DAILY_WORDS_FREE = 3
 DAILY_WORDS_PREMIUM = 10
 
+# Квизы
+QUIZ_SIZE_BASIC = 5
+QUIZ_SIZE_EXTENDED = 10
+QUIZ_SIZE_REVERSE = 7
+QUIZ_SIZE_MULTILANG = 10
+QUIZ_POINTS_BASIC = 10
+QUIZ_POINTS_PREMIUM = 15
+
 
 def normalize_database_url(url: str) -> str:
     """

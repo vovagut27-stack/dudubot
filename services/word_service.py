@@ -7,6 +7,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import random
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -218,6 +219,49 @@ class WordService:
             else:
                 wrong.append(others[(start + i) % len(others)])
         return wrong
+
+    def pick_quiz_word_options(
+        self,
+        correct: WordEntry,
+        language: str,
+        level: str,
+        count: int = 3,
+    ) -> list[str]:
+        """Неправильные варианты слова (для обратного квиза)."""
+        others = [
+            w.word
+            for w in self.filter_words(language, level, max_level=False)
+            if w.key != correct.key and w.word != correct.word
+        ]
+        seed = correct.key
+        digest = hashlib.md5(seed.encode()).hexdigest()
+        start = int(digest[:8], 16) % max(len(others), 1) if others else 0
+
+        wrong: list[str] = []
+        for i in range(count):
+            if not others:
+                wrong.append("—")
+            else:
+                wrong.append(others[(start + i) % len(others)])
+        return wrong
+
+    def sample_quiz_vocabulary(
+        self,
+        languages: list[str],
+        level: str,
+        count: int,
+    ) -> list[WordEntry]:
+        """Случайные слова из словаря по языкам и уровню (для Premium-квиза)."""
+        pool: list[WordEntry] = []
+        seen: set[str] = set()
+        for lang in languages:
+            for word in self.filter_words(lang, level, max_level=False):
+                if word.key not in seen:
+                    seen.add(word.key)
+                    pool.append(word)
+        if len(pool) <= count:
+            return pool
+        return random.sample(pool, count)
 
     @staticmethod
     def format_word_message(

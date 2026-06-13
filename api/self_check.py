@@ -29,6 +29,7 @@ def _check_imports() -> dict:
         "settings_ui_language_keyboard",
         "word_actions_keyboard",
         "quiz_answer_keyboard",
+        "quiz_menu_keyboard",
         "premium_keyboard",
         "dictionary_keyboard",
     ]

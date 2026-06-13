@@ -197,6 +197,39 @@ def quiz_answer_keyboard(options: list[tuple[str, str]]) -> InlineKeyboardMarkup
     )
 
 
+def quiz_menu_keyboard(*, is_premium: bool) -> InlineKeyboardMarkup:
+    """Меню выбора типа квиза."""
+    lock = "" if is_premium else " 🔒"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="📝 Базовый · 5 вопросов",
+                    callback_data="quiz:start:basic",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"📚 Расширенный · 10{lock}",
+                    callback_data="quiz:start:extended",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"🔄 Обратный · 7{lock}",
+                    callback_data="quiz:start:reverse",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"🌍 Мультиязычный · 10{lock}",
+                    callback_data="quiz:start:multilang",
+                )
+            ],
+        ]
+    )
+
+
 def premium_keyboard(ui_lang: str = "ru") -> InlineKeyboardMarkup:
     """Кнопки премиума и поддержки."""
     lang = normalize_ui_language(ui_lang)
