@@ -333,3 +333,33 @@ def migrate_schema(bind) -> list[str]:
             applied.append("daily_word_logs.rebuilt")
         applied.extend(_run_schema_patches(conn))
         return applied
+
+
+_db_initialized = False
+_schema_ready = False
+
+
+async def ensure_database_ready(settings: Settings) -> None:
+    """Инициализирует движок и создаёт таблицы (без импорта bot/handlers)."""
+    global _db_initialized, _schema_ready
+    import asyncio
+
+    if not _db_initialized:
+        init_db(settings)
+        _db_initialized = True
+
+    if _schema_ready:
+        return
+
+    if use_sync_sessions and turso_sync_engine is not None:
+        applied = await asyncio.to_thread(prepare_schema, turso_sync_engine)
+        if applied:
+            logger.info("Schema migrations applied: %s", ", ".join(applied))
+        _schema_ready = True
+        return
+
+    if engine is not None:
+        applied = await asyncio.to_thread(prepare_schema, engine)
+        if applied:
+            logger.info("Schema migrations applied: %s", ", ".join(applied))
+        _schema_ready = True

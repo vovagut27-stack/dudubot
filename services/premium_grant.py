@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from bootstrap import ensure_database
 from config import PREMIUM_TEST_DAYS, get_settings
-from database import session_scope
+from database import ensure_database_ready, session_scope
 from services.user_service import UserService
 
 
 async def grant_test_premium_to(telegram_id: int, *, days: int | None = None) -> dict:
     """Выдаёт Premium пользователю по Telegram ID."""
     settings = get_settings()
-    await ensure_database(settings)
+    await ensure_database_ready(settings)
 
     grant_days = days if days and days > 0 else PREMIUM_TEST_DAYS
 
@@ -37,7 +36,7 @@ async def grant_test_premium_to(telegram_id: int, *, days: int | None = None) ->
 async def get_premium_status(telegram_id: int) -> dict:
     """Читает статус Premium из БД (диагностика)."""
     settings = get_settings()
-    await ensure_database(settings)
+    await ensure_database_ready(settings)
 
     async with session_scope() as session:
         user_service = UserService(session)

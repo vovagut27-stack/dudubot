@@ -18,8 +18,6 @@ from services.word_service import WordService
 logger = logging.getLogger(__name__)
 
 _cache: dict[str, Any] = {}
-_db_ready = False
-_schema_ready = False
 # Dispatcher создаётся один раз — роутеры нельзя подключать повторно
 _dispatcher = None
 
@@ -44,30 +42,9 @@ class _LazyWordService:
 
 async def ensure_database(settings: Settings) -> None:
     """Инициализирует БД и создаёт таблицы при первом запуске."""
-    global _db_ready, _schema_ready
-    import asyncio
+    from database import ensure_database_ready
 
-    from database import engine, prepare_schema, turso_sync_engine, use_sync_sessions
-
-    if not _db_ready:
-        init_db(settings)
-        _db_ready = True
-
-    if _schema_ready:
-        return
-
-    if use_sync_sessions and turso_sync_engine is not None:
-        applied = await asyncio.to_thread(prepare_schema, turso_sync_engine)
-        if applied:
-            logger.info("Schema migrations applied: %s", ", ".join(applied))
-        _schema_ready = True
-        return
-
-    if engine is not None:
-        applied = await asyncio.to_thread(prepare_schema, engine)
-        if applied:
-            logger.info("Schema migrations applied: %s", ", ".join(applied))
-        _schema_ready = True
+    await ensure_database_ready(settings)
 
 
 async def set_bot_commands(bot) -> None:
