@@ -63,6 +63,9 @@ QUIZ_SIZE_MULTILANG = 10
 QUIZ_POINTS_BASIC = 10
 QUIZ_POINTS_PREMIUM = 15
 
+# Тестовая выдача Premium (админ / api/test_premium)
+PREMIUM_TEST_DAYS = int(os.getenv("PREMIUM_TEST_DAYS", "30"))
+
 # Код верификации в каталоге @appss (/appss_verify)
 APPSS_VERIFY_CODE = os.getenv("APPSS_VERIFY_CODE", "appss_8db7f6")
 

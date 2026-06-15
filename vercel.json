@@ -20,6 +20,9 @@
     "api/test_quiz.py": {
       "maxDuration": 60
     },
+    "api/test_premium.py": {
+      "maxDuration": 30
+    },
     "api/self_check.py": {
       "maxDuration": 30
     },

@@ -280,6 +280,23 @@ class UserService:
         logger.info("Premium активирован для user=%s до %s", user.telegram_id, user.premium_until)
         return True
 
+    def grant_test_premium(self, user: User, *, days: int = 30) -> datetime:
+        """Выдаёт Premium вручную (тест / админ), без записи в PaymentLog."""
+        now = datetime.now(timezone.utc)
+        base = user.premium_until if self.is_premium_active(user) and user.premium_until else now
+        if base.tzinfo is None:
+            base = base.replace(tzinfo=timezone.utc)
+
+        user.is_premium = True
+        user.premium_until = base + timedelta(days=days)
+        logger.info(
+            "Test Premium для user=%s до %s (+%d дн.)",
+            user.telegram_id,
+            user.premium_until,
+            days,
+        )
+        return user.premium_until
+
     async def save_quiz_result(self, user_id: int, score: int, total: int) -> None:
         """Сохраняет результат квиза."""
         from models.models import QuizResult
