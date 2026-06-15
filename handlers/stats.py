@@ -11,7 +11,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import DAILY_WORDS_FREE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
+from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from services.word_service import WordService
 from utils.menu_filters import menu_btn
@@ -62,7 +62,7 @@ async def cmd_stats(
         f"🌟 Лучший streak: <b>{user.best_streak}</b> дн.\n"
         f"📚 Выучено слов: <b>{user.words_learned}</b>\n\n"
         f"📬 Слов в день: <b>{daily_limit}</b> "
-        f"(Free {DAILY_WORDS_FREE} · Premium {DAILY_WORDS_PREMIUM})\n"
+        f"(Free {DAILY_WORDS_FREE_PER_LANGUAGE}/язык · Premium {DAILY_WORDS_PREMIUM})\n"
         f"📊 CEFR: <b>{user.level}</b>\n"
         f"🌍 Языки: {langs}\n"
         f"🕐 Уведомления: <b>{user.notification_time.strftime('%H:%M')}</b>\n"

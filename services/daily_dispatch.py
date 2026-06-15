@@ -53,6 +53,11 @@ async def run_daily_dispatch(
                     or user.notification_time.minute != now.minute
                 ):
                     continue
+
+                today_logs = await user_service.get_today_words(user, now.date())
+                if len(today_logs) >= user_service.get_daily_word_limit(user):
+                    continue
+
                 matched += 1
                 await send_daily_word_to_user(
                     bot=bot,
@@ -61,6 +66,7 @@ async def run_daily_dispatch(
                     word_service=word_service,
                     user_service=user_service,
                     target_date=now.date(),
+                    notify_if_complete=False,
                 )
                 sent += 1
             except Exception:

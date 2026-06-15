@@ -19,6 +19,8 @@ def ex_en(word: str, tr: str) -> list[dict[str, str]]:
     return [
         {"text": f'I know the word "{word}".', "translation": f"Я знаю слово «{t}»."},
         {"text": f"This is {word}.", "translation": f"Это {t}."},
+        {"text": f'Can you say "{word}"?', "translation": f"Можешь сказать «{t}»?"},
+        {"text": f'We use "{word}" every day.', "translation": f"Мы используем «{t}» каждый день."},
     ]
 
 
@@ -27,6 +29,8 @@ def ex_de(word: str, tr: str) -> list[dict[str, str]]:
     return [
         {"text": f'Ich kenne das Wort „{word}".', "translation": f"Я знаю слово «{t}»."},
         {"text": f"Das ist {word}.", "translation": f"Это {t}."},
+        {"text": f'Kannst du „{word}" sagen?', "translation": f"Можешь сказать «{t}»?"},
+        {"text": f'Wir benutzen „{word}" jeden Tag.', "translation": f"Мы используем «{t}» каждый день."},
     ]
 
 
@@ -35,6 +39,8 @@ def ex_it(word: str, tr: str) -> list[dict[str, str]]:
     return [
         {"text": f'Conosco la parola «{word}».', "translation": f"Я знаю слово «{t}»."},
         {"text": f"Questo è {word}.", "translation": f"Это {t}."},
+        {"text": f'Puoi dire «{word}»?', "translation": f"Можешь сказать «{t}»?"},
+        {"text": f'Usiamo «{word}» ogni giorno.', "translation": f"Мы используем «{t}» каждый день."},
     ]
 
 
@@ -43,6 +49,8 @@ def ex_sr(word: str, tr: str) -> list[dict[str, str]]:
     return [
         {"text": f'Znam reč „{word}".', "translation": f"Я знаю слово «{t}»."},
         {"text": f"To je {word}.", "translation": f"Это {t}."},
+        {"text": f'Možeš li reći „{word}"?', "translation": f"Можешь сказать «{t}»?"},
+        {"text": f'Koristimo „{word}" svaki dan.', "translation": f"Мы используем «{t}» каждый день."},
     ]
 
 
@@ -51,6 +59,8 @@ def ex_native(word: str, tr: str) -> list[dict[str, str]]:
     return [
         {"text": f"Я знаю слово «{word}».", "translation": f'I know the word "{t}".'},
         {"text": f"Это — {word}.", "translation": f"This is {t}."},
+        {"text": f"Можешь сказать «{word}»?", "translation": f'Can you say "{t}"?'},
+        {"text": f"Мы используем «{word}» каждый день.", "translation": f'We use "{t}" every day.'},
     ]
 
 

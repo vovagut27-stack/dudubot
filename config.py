@@ -51,8 +51,8 @@ STAR_SUBSCRIPTION_PERIOD = 2_592_000
 # Ссылка на поддержку проекта
 SUPPORT_URL = "https://donatty.com/creator_bots"
 
-# Слов в день: бесплатно / Premium
-DAILY_WORDS_FREE = 3
+# Слов в день: бесплатно — на каждый язык / Premium — всего
+DAILY_WORDS_FREE_PER_LANGUAGE = 3
 DAILY_WORDS_PREMIUM = 10
 
 # Квизы

@@ -19,7 +19,7 @@ from aiogram.types import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
+from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
 from services.user_service import UserService
 from utils.i18n import normalize_ui_language
 from utils.kb import premium_keyboard
@@ -90,7 +90,8 @@ def premium_description(price: int) -> str:
     return (
         "⭐ <b>Premium «Слово Дня»</b>\n\n"
         "Что входит:\n"
-        f"📬 <b>{DAILY_WORDS_PREMIUM} слов в день</b> (Free — 3 слова)\n"
+        f"📬 <b>{DAILY_WORDS_PREMIUM} слов в день</b> "
+        f"(Free — {DAILY_WORDS_FREE_PER_LANGUAGE} на каждый язык)\n"
         "📖 Личный словарь и избранное\n"
         "🌍 Изучение нескольких языков одновременно\n"
         "💬 Переводы всех примеров предложений\n"

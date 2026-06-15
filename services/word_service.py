@@ -195,6 +195,43 @@ class WordService:
 
         return picked
 
+    def pick_daily_words_free(
+        self,
+        languages: list[str],
+        level: str,
+        per_language: int,
+        already_by_lang: dict[str, set[str]],
+        target_date: date | None = None,
+        user_id: int | None = None,
+    ) -> list[WordEntry]:
+        """Free: по ``per_language`` слов на каждый изучаемый язык."""
+        if per_language <= 0:
+            return []
+
+        langs = languages or ["en"]
+        target_date = target_date or date.today()
+        picked: list[WordEntry] = []
+        global_seen: set[str] = set()
+
+        for lang in langs:
+            sent_keys = already_by_lang.get(lang, set())
+            global_seen.update(sent_keys)
+            for slot in range(per_language):
+                if slot < len(sent_keys):
+                    continue
+                word = self.pick_daily_word(
+                    language=lang,
+                    level=level,
+                    target_date=target_date,
+                    user_id=user_id,
+                    slot=slot,
+                )
+                if word and word.key not in global_seen:
+                    global_seen.add(word.key)
+                    picked.append(word)
+
+        return picked
+
     def pick_quiz_options(
         self,
         correct: WordEntry,
