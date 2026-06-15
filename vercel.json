@@ -5,45 +5,14 @@
     { "source": "/", "destination": "/api/index" }
   ],
   "functions": {
-    "api/index.py": {
-      "maxDuration": 10
-    },
-    "api/health.py": {
-      "maxDuration": 15
-    },
-    "api/test_db.py": {
-      "maxDuration": 30
-    },
-    "api/test_start.py": {
-      "maxDuration": 60
-    },
-    "api/test_quiz.py": {
-      "maxDuration": 60
-    },
-    "api/test_premium.py": {
-      "maxDuration": 30
-    },
-    "api/premium_status.py": {
-      "maxDuration": 30
-    },
-    "api/self_check.py": {
-      "maxDuration": 30
-    },
-    "api/webhook.py": {
-      "maxDuration": 60
-    },
-    "api/setup.py": {
-      "maxDuration": 30
-    },
-    "api/migrate.py": {
-      "maxDuration": 30
-    },
-    "api/grant_premium.py": {
-      "maxDuration": 30
-    },
-    "api/cron/daily.py": {
-      "maxDuration": 60
-    }
+    "api/index.py": { "maxDuration": 10 },
+    "api/health.py": { "maxDuration": 15 },
+    "api/test_db.py": { "maxDuration": 30 },
+    "api/self_check.py": { "maxDuration": 30 },
+    "api/webhook.py": { "maxDuration": 60 },
+    "api/setup.py": { "maxDuration": 30 },
+    "api/migrate.py": { "maxDuration": 30 },
+    "api/cron/daily.py": { "maxDuration": 60 }
   },
   "crons": [
     { "path": "/api/cron/daily", "schedule": "0 4 * * *" },
