@@ -38,6 +38,9 @@
     "api/migrate.py": {
       "maxDuration": 30
     },
+    "api/grant_premium.py": {
+      "maxDuration": 30
+    },
     "api/cron/daily.py": {
       "maxDuration": 60
     }

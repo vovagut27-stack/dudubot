@@ -22,19 +22,16 @@ async def grant_test_premium_to(telegram_id: int, *, days: int | None = None) ->
             user = await user_service.get_or_create(telegram_id=telegram_id)
         until = user_service.grant_test_premium(user, days=grant_days)
         await session.flush()
+        verified = user_service.is_premium_active(user)
 
-    async with session_scope() as session:
-        user_service = UserService(session)
-        user = await user_service.get_by_telegram_id(telegram_id)
-        verified = user_service.is_premium_active(user) if user else False
-        return {
-            "ok": True,
-            "telegram_id": telegram_id,
-            "premium_until": until.isoformat(),
-            "days_granted": grant_days,
-            "is_premium_db": bool(user.is_premium) if user else False,
-            "verified_active": verified,
-        }
+    return {
+        "ok": True,
+        "telegram_id": telegram_id,
+        "premium_until": until.isoformat(),
+        "days_granted": grant_days,
+        "is_premium_db": bool(user.is_premium),
+        "verified_active": verified,
+    }
 
 
 async def get_premium_status(telegram_id: int) -> dict:

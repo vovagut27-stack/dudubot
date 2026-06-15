@@ -25,7 +25,7 @@ from services.user_service import UserService
 from utils.i18n import normalize_ui_language, t
 from utils.kb import main_menu_keyboard, premium_keyboard
 from utils.menu_filters import menu_btn
-from utils.setup_auth import check_setup_secret
+from utils.setup_auth import check_activation_code, looks_like_activation_code
 
 logger = logging.getLogger(__name__)
 router = Router(name="premium")
@@ -113,9 +113,17 @@ async def cmd_premium(message: Message, settings: Settings, session: AsyncSessio
         return
 
     parts = (message.text or "").split(maxsplit=1)
-    if len(parts) > 1 and check_setup_secret(parts[1].strip()):
-        await reply_premium_granted(message, message.from_user.id)
-        return
+    if len(parts) > 1:
+        code = parts[1].strip()
+        if check_activation_code(code):
+            await reply_premium_granted(message, message.from_user.id)
+            return
+        if looks_like_activation_code(code):
+            await message.answer(
+                "❌ <b>Неверный код.</b> Проверьте SETUP_SECRET / PREMIUM_ACTIVATION_CODE на Vercel.\n"
+                "Формат: <code>/premium ВАШ_КОД</code>"
+            )
+            return
 
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(message.from_user.id)

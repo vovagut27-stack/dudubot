@@ -39,6 +39,8 @@ def get_all_routers() -> list[Router]:
     if not _middleware_attached:
         db_middleware = DatabaseMiddleware()
         for r in routers:
+            if r.name == "admin":
+                continue
             r.message.middleware(db_middleware)
             r.callback_query.middleware(db_middleware)
             r.pre_checkout_query.middleware(db_middleware)
