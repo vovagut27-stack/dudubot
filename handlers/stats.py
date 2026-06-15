@@ -50,8 +50,12 @@ async def cmd_stats(
     langs = ", ".join(
         SUPPORTED_LANGUAGES.get(c, c) for c in user.language_list()
     )
-    premium = "⭐ Premium" if user_service.is_premium_active(user) else "🆓 Free"
+    is_active = user_service.is_premium_active(user)
+    premium = "⭐ Premium" if is_active else "🆓 Free"
     daily_limit = user_service.get_daily_word_limit(user)
+    until_line = ""
+    if user.premium_until and is_active:
+        until_line = f"\n📅 Premium до: <b>{user.premium_until.strftime('%d.%m.%Y %H:%M')} UTC</b>"
 
     text = (
         "📊 <b>Ваша статистика</b>\n\n"
@@ -66,7 +70,7 @@ async def cmd_stats(
         f"📊 CEFR: <b>{user.level}</b>\n"
         f"🌍 Языки: {langs}\n"
         f"🕐 Уведомления: <b>{user.notification_time.strftime('%H:%M')}</b>\n"
-        f"💳 Тариф: {premium}"
+        f"💳 Тариф: {premium}{until_line}"
     )
 
     await message.answer(text)

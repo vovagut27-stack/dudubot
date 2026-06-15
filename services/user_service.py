@@ -23,6 +23,18 @@ from services.word_service import WordService
 logger = logging.getLogger(__name__)
 
 
+def _utc_now_naive() -> datetime:
+    """Текущий момент в UTC без tzinfo — формат хранения в SQLite/Turso."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _as_utc_naive(dt: datetime) -> datetime:
+    """Приводит datetime к naive UTC."""
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 class UserService:
     """Бизнес-логика работы с пользователями."""
 
@@ -235,20 +247,20 @@ class UserService:
         ]
 
     def is_premium_active(self, user: User) -> bool:
-        """Проверяет активность премиум-подписки."""
-        if not user.is_premium:
+        """Проверяет активность премиум-подписки (по дате, не только флагу)."""
+        now = _utc_now_naive()
+
+        if user.premium_until is not None:
+            until = _as_utc_naive(user.premium_until)
+            if until > now:
+                if not user.is_premium:
+                    user.is_premium = True
+                return True
+            if user.is_premium:
+                user.is_premium = False
             return False
-        if user.premium_until is None:
-            return True
-        until = user.premium_until
-        if until.tzinfo is None:
-            until = until.replace(tzinfo=timezone.utc)
-        else:
-            until = until.astimezone(timezone.utc)
-        if until <= datetime.now(timezone.utc):
-            user.is_premium = False
-            return False
-        return True
+
+        return bool(user.is_premium)
 
     async def activate_premium(
         self,
@@ -268,10 +280,10 @@ class UserService:
             logger.info("Платёж %s уже обработан", charge_id)
             return False
 
-        now = datetime.now(timezone.utc)
-        base = user.premium_until if self.is_premium_active(user) and user.premium_until else now
-        if base.tzinfo is None:
-            base = base.replace(tzinfo=timezone.utc)
+        now = _utc_now_naive()
+        base = now
+        if self.is_premium_active(user) and user.premium_until:
+            base = _as_utc_naive(user.premium_until)
 
         user.is_premium = True
         user.premium_until = base + timedelta(days=days)
@@ -290,15 +302,10 @@ class UserService:
 
     def grant_test_premium(self, user: User, *, days: int = 30) -> datetime:
         """Выдаёт Premium вручную (тест / админ), без записи в PaymentLog."""
-        now = datetime.now(timezone.utc)
+        now = _utc_now_naive()
         base = now
         if self.is_premium_active(user) and user.premium_until:
-            pu = user.premium_until
-            if pu.tzinfo is None:
-                pu = pu.replace(tzinfo=timezone.utc)
-            else:
-                pu = pu.astimezone(timezone.utc)
-            base = pu
+            base = _as_utc_naive(user.premium_until)
 
         user.is_premium = True
         user.premium_until = base + timedelta(days=days)

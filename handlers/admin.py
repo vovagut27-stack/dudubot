@@ -122,6 +122,15 @@ async def cmd_test_premium(
         await message.answer("❌ Не удалось выдать Premium. Попробуйте через /api/migrate?grant_premium=...")
         return
 
+    if not result.get("verified_active"):
+        await message.answer(
+            "⚠️ Premium записан в БД, но проверка не прошла.\n"
+            f"<code>{result}</code>\n\n"
+            "Проверьте: /api/premium_status?secret=...&telegram_id="
+            f"{target_id}"
+        )
+        return
+
     until_str = result["premium_until"][:19].replace("T", " ")
     label = "вам" if target_id == message.from_user.id else f"ID <code>{target_id}</code>"
     await message.answer(
