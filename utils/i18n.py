@@ -38,7 +38,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "settings_premium_btn": "⭐ Премиум / Поддержка",
         "settings_back": "◀️ Назад",
         "settings_choose_level": "📊 Выберите уровень CEFR:",
-        "settings_choose_time": "🕐 Выберите время уведомлений:",
+        "settings_choose_time": "🕐 Выберите время утренней рассылки:\n(07:00 · 08:00 · 09:00 · 12:00 · 18:00 · 20:00 · 21:00)",
         "settings_choose_langs": "🌍 Выберите языки для изучения (можно несколько):",
         "settings_choose_ui": "💬 Выберите язык интерфейса бота:",
         "settings_level_saved": "Уровень: {level} ✅",
@@ -49,7 +49,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "onboard_level_ok": "✅ Уровень: <b>{level}</b>",
         "onboard_choose_langs": "🌍 Выберите один или несколько языков для изучения:",
         "onboard_langs_ok": "🌍 Языки: {langs}",
-        "onboard_choose_time": "🕐 В какое время присылать слово дня?",
+        "onboard_choose_time": "🕐 В какое время утром присылать слова дня?\n(07:00 · 08:00 · 09:00 · 12:00 · 18:00 · 20:00 · 21:00)",
         "onboard_done": (
             "🎉 <b>Настройка завершена!</b>\n\n"
             "📊 Уровень: <b>{level}</b>\n"
@@ -102,7 +102,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "onboard_level_ok": "✅ Level: <b>{level}</b>",
         "onboard_choose_langs": "🌍 Choose one or more languages to study:",
         "onboard_langs_ok": "🌍 Languages: {langs}",
-        "onboard_choose_time": "🕐 When should we send the word of the day?",
+        "onboard_choose_time": "🕐 When should we send your daily words?\n(07:00 · 08:00 · 09:00 · 12:00 · 18:00 · 20:00 · 21:00)",
         "onboard_done": (
             "🎉 <b>Setup complete!</b>\n\n"
             "📊 Level: <b>{level}</b>\n"
@@ -155,7 +155,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "onboard_level_ok": "✅ Niveau: <b>{level}</b>",
         "onboard_choose_langs": "🌍 Wählen Sie eine oder mehrere Lernsprachen:",
         "onboard_langs_ok": "🌍 Sprachen: {langs}",
-        "onboard_choose_time": "🕐 Wann soll das Wort des Tages gesendet werden?",
+        "onboard_choose_time": "🕐 Wann sollen die Wörter des Tages gesendet werden?\n(07:00 · 08:00 · 09:00 · 12:00 · 18:00 · 20:00 · 21:00)",
         "onboard_done": (
             "🎉 <b>Einrichtung abgeschlossen!</b>\n\n"
             "📊 Niveau: <b>{level}</b>\n"
@@ -208,7 +208,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "onboard_level_ok": "✅ Livello: <b>{level}</b>",
         "onboard_choose_langs": "🌍 Scegli una o più lingue da studiare:",
         "onboard_langs_ok": "🌍 Lingue: {langs}",
-        "onboard_choose_time": "🕐 A che ora inviare la parola del giorno?",
+        "onboard_choose_time": "🕐 A che ora inviare le parole del giorno?\n(07:00 · 08:00 · 09:00 · 12:00 · 18:00 · 20:00 · 21:00)",
         "onboard_done": (
             "🎉 <b>Configurazione completata!</b>\n\n"
             "📊 Livello: <b>{level}</b>\n"
