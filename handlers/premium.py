@@ -21,8 +21,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
 from services.user_service import UserService
-from utils.i18n import normalize_ui_language
-from utils.kb import premium_keyboard
+from utils.i18n import normalize_ui_language, t
+from utils.kb import main_menu_keyboard, premium_keyboard
 from utils.menu_filters import menu_btn
 
 logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ async def cmd_premium(message: Message, settings: Settings, session: AsyncSessio
     ui = normalize_ui_language(user.ui_language) if user else "ru"
     await message.answer(
         premium_description(settings.premium_stars_price),
-        reply_markup=premium_keyboard(ui),
+        reply_markup=premium_keyboard(ui, from_settings=False),
     )
 
 
@@ -129,12 +129,32 @@ async def cmd_support(message: Message) -> None:
 @router.callback_query(F.data == "settings:premium")
 async def settings_premium(callback: CallbackQuery, settings: Settings, session: AsyncSession) -> None:
     """Premium из меню настроек."""
+    if callback.message is None:
+        await callback.answer()
+        return
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     ui = normalize_ui_language(user.ui_language) if user else "ru"
     await callback.message.edit_text(
         premium_description(settings.premium_stars_price),
-        reply_markup=premium_keyboard(ui),
+        reply_markup=premium_keyboard(ui, from_settings=True),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "premium:back")
+async def premium_back(callback: CallbackQuery, session: AsyncSession) -> None:
+    """Возврат в главное меню из экрана Premium."""
+    if callback.message is None:
+        await callback.answer()
+        return
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(callback.from_user.id)
+    ui = normalize_ui_language(user.ui_language) if user else "ru"
+    await callback.message.delete()
+    await callback.message.answer(
+        t(ui, "onboard_main_menu"),
+        reply_markup=main_menu_keyboard(ui),
     )
     await callback.answer()
 

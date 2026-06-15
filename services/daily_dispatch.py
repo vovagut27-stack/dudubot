@@ -44,14 +44,20 @@ async def run_daily_dispatch(
         user_service = UserService(session)
         users = await user_service.get_onboarded_users()
 
-        for user in users:
-            try:
-                now = user_local_now(user, settings.timezone)
-                if not is_notification_hour(user, now):
+    for user in users:
+        try:
+            now = user_local_now(user, settings.timezone)
+            if not is_notification_hour(user, now):
+                continue
+
+            async with session_scope() as session:
+                user_service = UserService(session)
+                db_user = await user_service.get_by_telegram_id(user.telegram_id)
+                if db_user is None:
                     continue
 
-                today_logs = await user_service.get_today_words(user, now.date())
-                limit = user_service.get_daily_word_limit(user)
+                today_logs = await user_service.get_today_words(db_user, now.date())
+                limit = user_service.get_daily_word_limit(db_user)
                 if len(today_logs) >= limit:
                     skipped += 1
                     continue
@@ -59,22 +65,23 @@ async def run_daily_dispatch(
                 matched += 1
                 logger.info(
                     "Рассылка user=%s slot=%s local=%s",
-                    user.telegram_id,
-                    user.notification_time.strftime("%H:%M"),
+                    db_user.telegram_id,
+                    db_user.notification_time.strftime("%H:%M"),
                     now.strftime("%Y-%m-%d %H:%M"),
                 )
                 await send_daily_word_to_user(
                     bot=bot,
-                    user=user,
+                    user=db_user,
                     session=session,
                     word_service=word_service,
                     user_service=user_service,
                     target_date=now.date(),
+                    default_tz=settings.timezone,
                     notify_if_complete=False,
                 )
-                sent += 1
-            except Exception:
-                logger.exception("Ошибка рассылки user_id=%s", user.telegram_id)
+            sent += 1
+        except Exception:
+            logger.exception("Ошибка рассылки user_id=%s", user.telegram_id)
 
     if matched or skipped:
         logger.info(

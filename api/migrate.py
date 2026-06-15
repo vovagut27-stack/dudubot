@@ -49,6 +49,12 @@ class handler(BaseHTTPRequestHandler):
             return
 
         grant_raw = (query.get("grant_premium") or query.get("telegram_id") or [""])[0].strip()
+        if query.get("grant_premium") or query.get("telegram_id"):
+            if not grant_raw.isdigit():
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"Bad grant_premium: numeric Telegram ID required")
+                return
         if grant_raw.isdigit():
             try:
                 from services.premium_grant import grant_test_premium_to

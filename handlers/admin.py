@@ -10,7 +10,6 @@ import os
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import PREMIUM_TEST_DAYS, Settings
 from services.premium_grant import grant_test_premium_to
@@ -60,12 +59,12 @@ def _parse_test_premium_args(
 
     if len(parts) == 2:
         arg = parts[1].strip()
-        if arg.isdigit():
-            if _is_admin(from_user_id, settings):
-                return True, int(arg), None
-            return False, int(arg), "no_admin"
         if _check_secret(arg):
             return True, from_user_id, None
+        if arg.isdigit() and _is_admin(from_user_id, settings):
+            return True, int(arg), None
+        if arg.isdigit():
+            return False, int(arg), "no_admin"
         return False, from_user_id, "bad_secret"
 
     if len(parts) >= 3:
@@ -81,7 +80,6 @@ def _parse_test_premium_args(
 @router.message(Command("test_premium"))
 async def cmd_test_premium(
     message: Message,
-    session: AsyncSession,
     settings: Settings,
 ) -> None:
     """Выдаёт тестовый Premium администратору или по SETUP_SECRET."""

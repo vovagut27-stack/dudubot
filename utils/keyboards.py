@@ -230,14 +230,15 @@ def quiz_menu_keyboard(*, is_premium: bool) -> InlineKeyboardMarkup:
     )
 
 
-def premium_keyboard(ui_lang: str = "ru") -> InlineKeyboardMarkup:
+def premium_keyboard(ui_lang: str = "ru", *, from_settings: bool = False) -> InlineKeyboardMarkup:
     """Кнопки премиума и поддержки."""
     lang = normalize_ui_language(ui_lang)
+    back_cb = "settings:back" if from_settings else "premium:back"
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="⭐ Оформить Premium", callback_data="premium:subscribe")],
             [InlineKeyboardButton(text="💝 Поддержать проект", url=SUPPORT_URL)],
-            [InlineKeyboardButton(text=t(lang, "settings_back"), callback_data="settings:back")],
+            [InlineKeyboardButton(text=t(lang, "settings_back"), callback_data=back_cb)],
         ]
     )
 

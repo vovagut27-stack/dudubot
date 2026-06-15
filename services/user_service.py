@@ -241,10 +241,14 @@ class UserService:
         if user.premium_until is None:
             return True
         until = user.premium_until
-        if until.tzinfo is not None:
-            until = until.astimezone(timezone.utc).replace(tzinfo=None)
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        return until > now
+        if until.tzinfo is None:
+            until = until.replace(tzinfo=timezone.utc)
+        else:
+            until = until.astimezone(timezone.utc)
+        if until <= datetime.now(timezone.utc):
+            user.is_premium = False
+            return False
+        return True
 
     async def activate_premium(
         self,
@@ -286,12 +290,14 @@ class UserService:
 
     def grant_test_premium(self, user: User, *, days: int = 30) -> datetime:
         """Выдаёт Premium вручную (тест / админ), без записи в PaymentLog."""
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(timezone.utc)
         base = now
         if self.is_premium_active(user) and user.premium_until:
             pu = user.premium_until
-            if pu.tzinfo is not None:
-                pu = pu.astimezone(timezone.utc).replace(tzinfo=None)
+            if pu.tzinfo is None:
+                pu = pu.replace(tzinfo=timezone.utc)
+            else:
+                pu = pu.astimezone(timezone.utc)
             base = pu
 
         user.is_premium = True

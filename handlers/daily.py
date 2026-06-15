@@ -13,8 +13,9 @@ from aiogram.filters import Command
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
+from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES, Settings
 from models.models import User, WordStatus
+from services.dispatch_time import user_local_now
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
 from utils.callback_keys import word_key_from_callback
@@ -41,6 +42,7 @@ async def send_daily_word_to_user(
     user_service: UserService,
     target_date: date | None = None,
     *,
+    default_tz: str = "Europe/Moscow",
     notify_if_complete: bool = True,
 ) -> None:
     """
@@ -48,7 +50,7 @@ async def send_daily_word_to_user(
 
     Free: 3 слова на каждый изучаемый язык · Premium: 10 слов всего.
     """
-    target_date = target_date or date.today()
+    target_date = target_date or user_local_now(user, default_tz).date()
     languages = user.language_list() or ["en"]
     is_premium = user_service.is_premium_active(user)
     limit = user_service.get_daily_word_limit(user)
@@ -158,6 +160,7 @@ async def _deliver_words(
                 sent_date=target_date,
                 message_id=msg.message_id,
             )
+            await session.flush()
             if idx < len(words):
                 await asyncio.sleep(0.15)
         except Exception:
@@ -172,6 +175,7 @@ async def _send_today_words(
     message: Message,
     session: AsyncSession,
     word_service: WordService,
+    settings: Settings,
 ) -> None:
     """Общая логика команды /today."""
     user_service = UserService(session)
@@ -187,16 +191,22 @@ async def _send_today_words(
         session=session,
         word_service=word_service,
         user_service=user_service,
+        default_tz=settings.timezone,
         notify_if_complete=True,
     )
 
 
 @router.message(Command("today"))
 @router.message(menu_btn("btn_today"))
-async def cmd_today(message: Message, session: AsyncSession, word_service: WordService) -> None:
+async def cmd_today(
+    message: Message,
+    session: AsyncSession,
+    word_service: WordService,
+    settings: Settings,
+) -> None:
     """Получить слово дня вручную."""
     try:
-        await _send_today_words(message, session, word_service)
+        await _send_today_words(message, session, word_service, settings)
     except Exception:
         from database import rollback_session
 
