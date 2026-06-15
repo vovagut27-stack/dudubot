@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import CEFR_LEVELS, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES, UI_LANGUAGES
 from models.models import User
 from services.user_service import UserService
+from utils.callback_guard import require_callback_message
 from utils.callbacks import parse_time_callback
 from utils.i18n import normalize_ui_language, t
 from utils.kb import (
@@ -88,8 +89,12 @@ async def settings_back(
             await callback.answer(t("ru", "error_generic"))
         return
 
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
     ui = normalize_ui_language(user.ui_language)
-    await callback.message.edit_text(
+    await msg.edit_text(
         _settings_text(user),
         reply_markup=settings_keyboard(ui),
     )

@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import CEFR_LEVELS, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES
 from services.user_service import UserService
+from utils.callback_guard import require_callback_message
 from utils.html_escape import h
 from utils.callbacks import parse_time_callback
 from utils.i18n import normalize_ui_language, supported_languages_list, t
@@ -120,11 +121,15 @@ async def onboard_level(callback: CallbackQuery, state: FSMContext, session: Asy
         return
     ui = normalize_ui_language(user.ui_language) if user else "ru"
 
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
     await state.update_data(level=level)
     await state.set_state(OnboardingStates.languages)
     await state.update_data(selected_langs=[])
 
-    await callback.message.edit_text(
+    await msg.edit_text(
         f"{t(ui, 'onboard_level_ok', level=level)}\n\n{t(ui, 'onboard_choose_langs')}",
         reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
     )
@@ -149,7 +154,10 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
             return
         await state.set_state(OnboardingStates.time)
         langs = ", ".join(SUPPORTED_LANGUAGES.get(c, c) for c in selected)
-        await callback.message.edit_text(
+        msg = await require_callback_message(callback)
+        if msg is None:
+            return
+        await msg.edit_text(
             f"{t(ui, 'onboard_langs_ok', langs=langs)}\n\n{t(ui, 'onboard_choose_time')}",
             reply_markup=onboarding_time_keyboard(),
         )
@@ -168,7 +176,11 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
         selected.append(code)
     await state.update_data(selected_langs=selected)
 
-    await callback.message.edit_reply_markup(
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
+    await msg.edit_reply_markup(
         reply_markup=onboarding_languages_keyboard(set(selected), ui_lang=ui)
     )
     await callback.answer()
@@ -222,10 +234,13 @@ async def onboard_time(
 
     ui = normalize_ui_language(user.ui_language)
     langs = ", ".join(SUPPORTED_LANGUAGES.get(c, c) for c in selected)
-    await callback.message.edit_text(
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+    await msg.edit_text(
         t(ui, "onboard_done", level=level, langs=langs, time=time_str)
     )
-    await callback.message.answer(
+    await msg.answer(
         t(ui, "onboard_main_menu"),
         reply_markup=main_menu_keyboard(ui),
     )

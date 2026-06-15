@@ -216,9 +216,16 @@ class WordService:
         for lang in langs:
             sent_keys = already_by_lang.get(lang, set())
             global_seen.update(sent_keys)
-            for slot in range(per_language):
-                if slot < len(sent_keys):
-                    continue
+            remaining = per_language - len(sent_keys)
+            if remaining <= 0:
+                continue
+
+            slot = len(sent_keys)
+            added = 0
+            attempts = 0
+            max_attempts = remaining * 8
+
+            while added < remaining and attempts < max_attempts:
                 word = self.pick_daily_word(
                     language=lang,
                     level=level,
@@ -226,9 +233,12 @@ class WordService:
                     user_id=user_id,
                     slot=slot,
                 )
+                slot += 1
+                attempts += 1
                 if word and word.key not in global_seen:
                     global_seen.add(word.key)
                     picked.append(word)
+                    added += 1
 
         return picked
 

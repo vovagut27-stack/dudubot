@@ -212,19 +212,31 @@ async def successful_payment(
     )
 
     is_subscription = payment.is_recurring or bool(payment.subscription_expiration_date)
+    charge_id = payment.telegram_payment_charge_id or (
+        f"stars_{message.from_user.id}_{payment.total_amount}_{message.message_id}"
+    )
 
     activated = await user_service.activate_premium(
         user=user,
-        charge_id=payment.telegram_payment_charge_id,
+        charge_id=charge_id,
         amount=payment.total_amount,
         payload=payment.invoice_payload,
         is_subscription=is_subscription,
     )
+    await session.flush()
 
     if not activated:
-        await message.answer(
-            "ℹ️ Этот платёж уже был обработан ранее. Premium активен."
-        )
+        if user_service.is_premium_active(user):
+            until = user.premium_until.strftime("%d.%m.%Y") if user.premium_until else "—"
+            await message.answer(
+                f"ℹ️ Этот платёж уже был обработан ранее.\n"
+                f"⭐ Premium активен до: <b>{until}</b>"
+            )
+        else:
+            await message.answer(
+                "⚠️ Не удалось активировать Premium по этому платежу.\n"
+                "Напишите в поддержку или попробуйте /premium снова."
+            )
         return
 
     until = user.premium_until.strftime("%d.%m.%Y") if user.premium_until else "—"

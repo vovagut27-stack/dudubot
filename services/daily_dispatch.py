@@ -69,7 +69,7 @@ async def run_daily_dispatch(
                     db_user.notification_time.strftime("%H:%M"),
                     now.strftime("%Y-%m-%d %H:%M"),
                 )
-                await send_daily_word_to_user(
+                delivered = await send_daily_word_to_user(
                     bot=bot,
                     user=db_user,
                     session=session,
@@ -79,7 +79,8 @@ async def run_daily_dispatch(
                     default_tz=settings.timezone,
                     notify_if_complete=False,
                 )
-            sent += 1
+            if delivered > 0:
+                sent += 1
         except Exception:
             logger.exception("Ошибка рассылки user_id=%s", user.telegram_id)
 

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from services.user_service import UserService
 from services.word_service import WordService
+from utils.callback_guard import require_callback_message
 from utils.callback_keys import word_key_from_callback
 from utils.i18n import normalize_ui_language
 from utils.kb import dictionary_keyboard, premium_keyboard, word_actions_keyboard
@@ -125,8 +126,11 @@ async def dict_page(
     except ValueError:
         await callback.answer("Ошибка страницы", show_alert=True)
         return
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
     await _show_dictionary_page(
-        callback.message,
+        msg,
         session,
         word_service,
         callback.from_user.id,
@@ -153,7 +157,11 @@ async def dict_view_word(
         await callback.answer("Слово не найдено", show_alert=True)
         return
 
-    await callback.message.answer(
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
+    await msg.answer(
         word_service.format_word_message(word, header="📖 Из словаря"),
         reply_markup=word_actions_keyboard(word_key, in_dictionary=True),
     )

@@ -18,6 +18,7 @@ from models.models import User, WordStatus
 from services.dispatch_time import user_local_now
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
+from utils.callback_guard import require_callback_message
 from utils.callback_keys import word_key_from_callback
 from utils.kb import word_actions_keyboard
 from utils.menu_filters import menu_btn
@@ -44,11 +45,14 @@ async def send_daily_word_to_user(
     *,
     default_tz: str = "Europe/Moscow",
     notify_if_complete: bool = True,
-) -> None:
+) -> int:
     """
     Отправляет слова дня пользователю.
 
     Free: 3 слова на каждый изучаемый язык · Premium: 10 слов всего.
+
+    Returns:
+        Число успешно отправленных слов.
     """
     target_date = target_date or user_local_now(user, default_tz).date()
     languages = user.language_list() or ["en"]
@@ -63,7 +67,7 @@ async def send_daily_word_to_user(
                 f"📬 Слова на сегодня уже отправлены ({len(already_sent)}/{limit}).\n"
                 "Новые слова — завтра или оформите Premium для большего лимита.",
             )
-        return
+        return 0
 
     sent_keys = {log.word_key for log in already_sent}
     remaining = limit - len(already_sent)
@@ -95,7 +99,7 @@ async def send_daily_word_to_user(
                 user.telegram_id,
                 "😔 Не удалось подобрать слова. Попробуйте позже или смените уровень в /settings",
             )
-        return
+        return 0
 
     if is_premium:
         plan = f"⭐ Premium ({DAILY_WORDS_PREMIUM} слов/день)"
@@ -115,7 +119,7 @@ async def send_daily_word_to_user(
         ),
     )
 
-    await _deliver_words(bot, user, session, word_service, user_service, words, target_date)
+    return await _deliver_words(bot, user, session, word_service, user_service, words, target_date)
 
 
 def _lang_word(count: int) -> str:
@@ -135,8 +139,9 @@ async def _deliver_words(
     user_service: UserService,
     words: list[WordEntry],
     target_date: date,
-) -> None:
-    """Отправляет список слов и логирует в БД."""
+) -> int:
+    """Отправляет список слов и логирует в БД. Возвращает число доставленных слов."""
+    delivered = 0
     for idx, word in enumerate(words, start=1):
         try:
             progress = await user_service.get_word_progress(user.id, word.key)
@@ -161,6 +166,7 @@ async def _deliver_words(
                 message_id=msg.message_id,
             )
             await session.flush()
+            delivered += 1
             if idx < len(words):
                 await asyncio.sleep(0.15)
         except Exception:
@@ -169,6 +175,7 @@ async def _deliver_words(
                 word.key,
                 user.telegram_id,
             )
+    return delivered
 
 
 async def _send_today_words(
@@ -285,7 +292,11 @@ async def word_examples(
         await callback.answer("Слово не найдено", show_alert=True)
         return
 
-    await callback.message.answer(word_service.format_examples(word))
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
+    await msg.answer(word_service.format_examples(word))
     await callback.answer()
 
 
@@ -320,8 +331,9 @@ async def word_add_dictionary(
     )
     await callback.answer(msg, show_alert=True)
 
-    if callback.message.reply_markup:
-        await callback.message.edit_reply_markup(
+    chat_msg = await require_callback_message(callback)
+    if chat_msg and chat_msg.reply_markup:
+        await chat_msg.edit_reply_markup(
             reply_markup=word_actions_keyboard(word_key, in_dictionary=True)
         )
 

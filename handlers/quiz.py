@@ -28,6 +28,7 @@ from config import (
 from models.models import User, WordStatus
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
+from utils.callback_guard import require_callback_message
 from utils.html_escape import h
 from utils.kb import quiz_answer_keyboard, quiz_menu_keyboard
 from utils.menu_filters import menu_btn
@@ -194,9 +195,13 @@ async def quiz_start(
         score=0,
     )
 
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
     title = QUIZ_MODE_TITLES.get(mode, "Квиз")
-    await callback.message.edit_text(f"🎯 <b>{title}</b>\n\nПоехали!")
-    await _send_question(callback.message, questions[0], word_service, state)
+    await msg.edit_text(f"🎯 <b>{title}</b>\n\nПоехали!")
+    await _send_question(msg, questions[0], word_service, state)
     await callback.answer()
 
 
@@ -295,11 +300,13 @@ async def quiz_answer(
             await user_service.save_quiz_result(user.id, score, len(questions_keys))
 
         mode_title = QUIZ_MODE_TITLES.get(quiz_mode, "Квиз")
-        await callback.message.edit_text(
-            f"🏁 <b>{mode_title} завершён!</b>\n\n"
-            f"Результат: <b>{score}/{len(questions_keys)}</b>\n"
-            f"{'🌟 Отлично!' if score >= len(questions_keys) * 0.8 else '💪 Продолжайте учиться!'}"
-        )
+        msg = await require_callback_message(callback)
+        if msg is not None:
+            await msg.edit_text(
+                f"🏁 <b>{mode_title} завершён!</b>\n\n"
+                f"Результат: <b>{score}/{len(questions_keys)}</b>\n"
+                f"{'🌟 Отлично!' if score >= len(questions_keys) * 0.8 else '💪 Продолжайте учиться!'}"
+            )
         await state.clear()
         return
 
@@ -307,14 +314,20 @@ async def quiz_answer(
     next_word = word_service.get_by_key(questions_keys[current])
     if next_word is None:
         logger.warning("Quiz missing word key: %s", questions_keys[current])
-        await callback.message.edit_text(
-            "😔 Квиз прерван: слово не найдено в словаре. Начните заново: /quiz"
-        )
+        msg = await require_callback_message(callback)
+        if msg is not None:
+            await msg.edit_text(
+                "😔 Квиз прерван: слово не найдено в словаре. Начните заново: /quiz"
+            )
         await state.clear()
         return
 
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
     try:
-        await callback.message.delete()
+        await msg.delete()
     except TelegramBadRequest:
         pass
-    await _send_question(callback.message, next_word, word_service, state)
+    await _send_question(msg, next_word, word_service, state)
