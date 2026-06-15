@@ -26,6 +26,8 @@ async def _check() -> dict:
     checks["TURSO_AUTH_TOKEN"] = bool(os.getenv("TURSO_AUTH_TOKEN"))
     checks["WEBHOOK_SECRET"] = bool(os.getenv("WEBHOOK_SECRET"))
     checks["SETUP_SECRET"] = bool(os.getenv("SETUP_SECRET"))
+    checks["PREMIUM_ACTIVATION_CODE"] = bool(os.getenv("PREMIUM_ACTIVATION_CODE"))
+    checks["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
     admin_raw = os.getenv("ADMIN_IDS", "")
     checks["ADMIN_IDS"] = [
         int(x.strip()) for x in admin_raw.split(",") if x.strip().isdigit()

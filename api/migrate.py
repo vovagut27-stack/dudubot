@@ -29,7 +29,11 @@ async def _run_migrate() -> dict:
     elif engine is not None:
         applied = await asyncio.to_thread(prepare_schema, engine)
 
-    return {"ok": True, "applied": applied}
+    return {
+        "ok": True,
+        "applied": applied,
+        "deploy_sha": os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown"),
+    }
 
 
 class handler(BaseHTTPRequestHandler):
@@ -61,6 +65,7 @@ class handler(BaseHTTPRequestHandler):
                         days=days if days > 0 else None,
                     )
                 )
+                result["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
                 body = json.dumps(result, ensure_ascii=False, indent=2)
                 status = 200
             except Exception:
