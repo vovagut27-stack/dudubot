@@ -20,10 +20,12 @@ from aiogram.types import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
+from handlers.premium_grant_cmd import reply_premium_granted
 from services.user_service import UserService
 from utils.i18n import normalize_ui_language, t
 from utils.kb import main_menu_keyboard, premium_keyboard
 from utils.menu_filters import menu_btn
+from utils.setup_auth import check_setup_secret
 
 logger = logging.getLogger(__name__)
 router = Router(name="premium")
@@ -98,14 +100,23 @@ def premium_description(price: int) -> str:
         "🎯 Premium-квизы: расширенный, обратный, мультиязычный\n"
         "🔔 Приоритетная поддержка\n\n"
         f"💫 Стоимость: <b>{price} Stars</b> / 30 дней\n"
-        "Оплата через Telegram Stars — безопасно и мгновенно."
+        "Оплата через Telegram Stars — безопасно и мгновенно.\n\n"
+        "🧪 Тест (с кодом): <code>/premium ВАШ_КОД</code> или <code>/test_premium ВАШ_КОД</code>"
     )
 
 
 @router.message(Command("premium"))
 @router.message(menu_btn("btn_premium"))
 async def cmd_premium(message: Message, settings: Settings, session: AsyncSession) -> None:
-    """Информация о Premium."""
+    """Информация о Premium или активация по коду."""
+    if not message.from_user:
+        return
+
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) > 1 and check_setup_secret(parts[1].strip()):
+        await reply_premium_granted(message, message.from_user.id)
+        return
+
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(message.from_user.id)
     ui = normalize_ui_language(user.ui_language) if user else "ru"

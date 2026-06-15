@@ -80,6 +80,7 @@ async def set_bot_commands(bot) -> None:
         BotCommand(command="quiz", description="🎯 Мини-квиз"),
         BotCommand(command="dictionary", description="📖 Мой словарь"),
         BotCommand(command="premium", description="⭐ Премиум подписка"),
+        BotCommand(command="test_premium", description="🧪 Тест Premium (с кодом)"),
         BotCommand(command="support", description="💝 Поддержать проект"),
     ]
     await bot.set_my_commands(commands)
