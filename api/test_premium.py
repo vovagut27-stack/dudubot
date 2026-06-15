@@ -1,5 +1,7 @@
 """
 Выдача тестового Premium: GET /api/test_premium?secret=SETUP_SECRET&telegram_id=ID
+
+Дубликат: /api/migrate?secret=...&grant_premium=ID
 """
 
 from __future__ import annotations
@@ -15,32 +17,6 @@ from urllib.parse import parse_qs, urlparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
-async def _grant_premium(telegram_id: int, days: int) -> dict:
-    from bootstrap import ensure_database
-    from config import PREMIUM_TEST_DAYS, get_settings
-    from database import session_scope
-    from services.user_service import UserService
-
-    settings = get_settings()
-    await ensure_database(settings)
-
-    grant_days = days if days > 0 else PREMIUM_TEST_DAYS
-
-    async with session_scope() as session:
-        user_service = UserService(session)
-        user = await user_service.get_by_telegram_id(telegram_id)
-        if user is None:
-            user = await user_service.get_or_create(telegram_id=telegram_id)
-        until = user_service.grant_test_premium(user, days=grant_days)
-
-    return {
-        "ok": True,
-        "telegram_id": telegram_id,
-        "premium_until": until.isoformat(),
-        "days_granted": grant_days,
-    }
-
-
 class handler(BaseHTTPRequestHandler):
     """GET /api/test_premium?secret=...&telegram_id=123456789&days=30"""
 
@@ -51,12 +27,12 @@ class handler(BaseHTTPRequestHandler):
             return
 
         query = parse_qs(urlparse(self.path).query)
-        raw_id = (query.get("telegram_id") or [""])[0].strip()
+        raw_id = (query.get("telegram_id") or query.get("grant_premium") or [""])[0].strip()
         if not raw_id.isdigit():
             self.send_response(400)
             self.end_headers()
             self.wfile.write(
-                b"Missing or invalid ?telegram_id= (numeric Telegram user ID)"
+                b"Missing ?telegram_id= or ?grant_premium= (numeric Telegram user ID)"
             )
             return
 
@@ -67,7 +43,11 @@ class handler(BaseHTTPRequestHandler):
             days = 0
 
         try:
-            result = asyncio.run(_grant_premium(int(raw_id), days))
+            from services.premium_grant import grant_test_premium_to
+
+            result = asyncio.run(
+                grant_test_premium_to(int(raw_id), days=days if days > 0 else None)
+            )
             body = json.dumps(result, ensure_ascii=False, indent=2)
             status = 200
         except Exception:

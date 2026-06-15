@@ -1,5 +1,6 @@
 """
-Ручной запуск миграций схемы: GET /api/migrate?secret=ВАШ_SETUP_SECRET
+Ручной запуск миграций: GET /api/migrate?secret=SETUP_SECRET
+Тест Premium: GET /api/migrate?secret=SETUP_SECRET&grant_premium=TELEGRAM_ID
 """
 
 from __future__ import annotations
@@ -45,6 +46,33 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(403)
             self.end_headers()
             self.wfile.write(b"Forbidden: wrong or missing ?secret=")
+            return
+
+        grant_raw = (query.get("grant_premium") or query.get("telegram_id") or [""])[0].strip()
+        if grant_raw.isdigit():
+            try:
+                from services.premium_grant import grant_test_premium_to
+
+                days_raw = (query.get("days") or ["0"])[0].strip()
+                days = int(days_raw) if days_raw.isdigit() else 0
+                result = asyncio.run(
+                    grant_test_premium_to(
+                        int(grant_raw),
+                        days=days if days > 0 else None,
+                    )
+                )
+                body = json.dumps(result, ensure_ascii=False, indent=2)
+                status = 200
+            except Exception:
+                body = json.dumps(
+                    {"ok": False, "error": traceback.format_exc()},
+                    ensure_ascii=False,
+                )
+                status = 500
+            self.send_response(status)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(body.encode("utf-8"))
             return
 
         try:
