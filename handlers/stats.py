@@ -11,7 +11,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, SUPPORTED_LANGUAGES
+from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, FREE_MAX_LANGUAGES, SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from services.word_service import WordService
 from utils.menu_filters import menu_btn
@@ -53,6 +53,19 @@ async def cmd_stats(
     is_active = user_service.is_premium_active(user)
     premium = "⭐ Premium" if is_active else "🆓 Free"
     daily_limit = user_service.get_daily_word_limit(user)
+    if is_active:
+        langs_line = f"🌍 Языки: {langs} (безлимит)"
+    else:
+        active_count = len(user_service.effective_language_list(user))
+        stored_count = len(user.language_list())
+        if stored_count > active_count:
+            langs_line = (
+                f"🌍 Языки: {langs}\n"
+                f"   ↳ активны <b>{active_count}</b> из {stored_count} "
+                f"(Free — макс. {FREE_MAX_LANGUAGES}, Premium — безлимит)"
+            )
+        else:
+            langs_line = f"🌍 Языки: {langs} (макс. {FREE_MAX_LANGUAGES} на Free)"
     until_line = ""
     if user.premium_until and is_active:
         until_line = f"\n📅 Premium до: <b>{user.premium_until.strftime('%d.%m.%Y %H:%M')} UTC</b>"
@@ -68,7 +81,7 @@ async def cmd_stats(
         f"📬 Слов в день: <b>{daily_limit}</b> "
         f"(Free {DAILY_WORDS_FREE_PER_LANGUAGE}/язык · Premium {DAILY_WORDS_PREMIUM})\n"
         f"📊 CEFR: <b>{user.level}</b>\n"
-        f"🌍 Языки: {langs}\n"
+        f"{langs_line}\n"
         f"🕐 Уведомления: <b>{user.notification_time.strftime('%H:%M')}</b>\n"
         f"💳 Тариф: {premium}{until_line}"
     )

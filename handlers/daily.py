@@ -55,7 +55,7 @@ async def send_daily_word_to_user(
         Число успешно отправленных слов.
     """
     target_date = target_date or user_local_now(user, default_tz).date()
-    languages = user.language_list() or ["en"]
+    languages = user_service.effective_language_list(user)
     is_premium = user_service.is_premium_active(user)
     limit = user_service.get_daily_word_limit(user)
 

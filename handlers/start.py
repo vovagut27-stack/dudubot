@@ -15,7 +15,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import CEFR_LEVELS, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES
+from config import CEFR_LEVELS, FREE_MAX_LANGUAGES, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES
 from services.user_service import UserService
 from utils.callback_guard import require_callback_message
 from utils.html_escape import h
@@ -129,8 +129,15 @@ async def onboard_level(callback: CallbackQuery, state: FSMContext, session: Asy
     await state.set_state(OnboardingStates.languages)
     await state.update_data(selected_langs=[])
 
+    is_premium = user_service.is_premium_active(user) if user else False
+    langs_hint = (
+        t(ui, "onboard_choose_langs_premium")
+        if is_premium
+        else t(ui, "onboard_choose_langs_free", max=str(FREE_MAX_LANGUAGES))
+    )
+
     await msg.edit_text(
-        f"{t(ui, 'onboard_level_ok', level=level)}\n\n{t(ui, 'onboard_choose_langs')}",
+        f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
         reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
     )
     await callback.answer()
@@ -173,6 +180,13 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
     if code in selected:
         selected.remove(code)
     else:
+        max_langs = user_service.max_study_languages(user) if user else FREE_MAX_LANGUAGES
+        if max_langs is not None and len(selected) >= max_langs:
+            await callback.answer(
+                t(ui, "settings_langs_limit_free", max=str(max_langs)),
+                show_alert=True,
+            )
+            return
         selected.append(code)
     await state.update_data(selected_langs=selected)
 
@@ -224,6 +238,14 @@ async def onboard_time(
         username=callback.from_user.username,
         first_name=callback.from_user.first_name,
     )
+    max_langs = user_service.max_study_languages(user)
+    if max_langs is not None and len(selected) > max_langs:
+        ui = normalize_ui_language(user.ui_language)
+        await callback.answer(
+            t(ui, "settings_langs_limit_save", max=str(max_langs)),
+            show_alert=True,
+        )
+        return
     await user_service.complete_onboarding(
         user=user,
         level=level,

@@ -93,12 +93,13 @@ def _build_questions(
     user: User,
     word_service: WordService,
     learned: list[WordEntry],
+    *,
+    study_langs: list[str],
 ) -> list[WordEntry] | None:
     size = _quiz_size(mode)
 
     if mode == QuizMode.MULTILANG:
-        langs = user.language_list() or ["en"]
-        pool = word_service.sample_quiz_vocabulary(langs, user.level, size * 2)
+        pool = word_service.sample_quiz_vocabulary(study_langs, user.level, size * 2)
         if len(pool) < 4:
             return None
         random.shuffle(pool)
@@ -170,7 +171,13 @@ async def quiz_start(
         return
 
     learned = await _collect_learned_words(user_service, word_service, user)
-    questions = _build_questions(mode, user, word_service, learned)
+    questions = _build_questions(
+        mode,
+        user,
+        word_service,
+        learned,
+        study_langs=user_service.effective_language_list(user),
+    )
 
     if questions is None:
         if mode == QuizMode.MULTILANG:

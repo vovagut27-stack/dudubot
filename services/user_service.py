@@ -10,7 +10,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM
+from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, FREE_MAX_LANGUAGES
 from models.models import (
     DailyWordLog,
     PaymentLog,
@@ -192,11 +192,25 @@ class UserService:
         self._session.add(log)
         return log
 
+    def max_study_languages(self, user: User) -> int | None:
+        """Максимум языков для изучения. None — безлимит (Premium)."""
+        if self.is_premium_active(user):
+            return None
+        return FREE_MAX_LANGUAGES
+
+    def effective_language_list(self, user: User) -> list[str]:
+        """Языки, по которым идёт обучение (Free — не более FREE_MAX_LANGUAGES)."""
+        langs = user.language_list() or ["en"]
+        max_langs = self.max_study_languages(user)
+        if max_langs is None:
+            return langs
+        return sorted(langs)[:max_langs]
+
     def get_daily_word_limit(self, user: User) -> int:
         """Лимит слов в день: 3 на язык (Free) / 10 всего (Premium)."""
         if self.is_premium_active(user):
             return DAILY_WORDS_PREMIUM
-        langs = user.language_list() or ["en"]
+        langs = self.effective_language_list(user)
         return DAILY_WORDS_FREE_PER_LANGUAGE * len(langs)
 
     async def get_today_words(self, user: User, target_date: date | None = None) -> list[DailyWordLog]:

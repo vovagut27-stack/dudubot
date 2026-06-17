@@ -19,7 +19,7 @@ from aiogram.types import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
+from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, FREE_MAX_LANGUAGES, STAR_SUBSCRIPTION_PERIOD, SUPPORT_URL, Settings
 from handlers.premium_grant_cmd import reply_premium_granted
 from services.user_service import UserService
 from utils.i18n import normalize_ui_language, t
@@ -94,8 +94,8 @@ def premium_description(price: int) -> str:
         "Что входит:\n"
         f"📬 <b>{DAILY_WORDS_PREMIUM} слов в день</b> "
         f"(Free — {DAILY_WORDS_FREE_PER_LANGUAGE} на каждый язык)\n"
+        f"🌍 <b>Безлимит языков</b> (Free — до {FREE_MAX_LANGUAGES})\n"
         "📖 Личный словарь и избранное\n"
-        "🌍 Изучение нескольких языков одновременно\n"
         "💬 Переводы всех примеров предложений\n"
         "🎯 Premium-квизы: расширенный, обратный, мультиязычный\n"
         "🔔 Приоритетная поддержка\n\n"

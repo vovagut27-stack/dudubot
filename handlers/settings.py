@@ -14,7 +14,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import CEFR_LEVELS, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES, UI_LANGUAGES
+from config import CEFR_LEVELS, FREE_MAX_LANGUAGES, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES, UI_LANGUAGES
 from models.models import User
 from services.user_service import UserService
 from utils.callback_guard import require_callback_message
@@ -176,12 +176,18 @@ async def settings_langs_menu(callback: CallbackQuery, session: AsyncSession, st
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     selected = set(user.language_list()) if user else set()
     ui = normalize_ui_language(user.ui_language) if user else "ru"
+    is_premium = user_service.is_premium_active(user) if user else False
+    langs_hint = (
+        t(ui, "settings_choose_langs_premium")
+        if is_premium
+        else t(ui, "settings_choose_langs_free", max=str(FREE_MAX_LANGUAGES))
+    )
 
     await state.set_state(SettingsStates.languages)
     await state.update_data(selected_langs=list(selected))
 
     await callback.message.edit_text(
-        t(ui, "settings_choose_langs"),
+        langs_hint,
         reply_markup=settings_languages_keyboard(selected, ui_lang=ui),
     )
     await callback.answer()
@@ -197,15 +203,22 @@ async def settings_toggle_lang(callback: CallbackQuery, state: FSMContext, sessi
 
     data = await state.get_data()
     selected: list[str] = list(data.get("selected_langs", []))
-    if code in selected:
-        selected.remove(code)
-    else:
-        selected.append(code)
-    await state.update_data(selected_langs=selected)
-
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     ui = normalize_ui_language(user.ui_language) if user else "ru"
+
+    if code in selected:
+        selected.remove(code)
+    else:
+        max_langs = user_service.max_study_languages(user) if user else FREE_MAX_LANGUAGES
+        if max_langs is not None and len(selected) >= max_langs:
+            await callback.answer(
+                t(ui, "settings_langs_limit_free", max=str(max_langs)),
+                show_alert=True,
+            )
+            return
+        selected.append(code)
+    await state.update_data(selected_langs=selected)
 
     await callback.message.edit_reply_markup(
         reply_markup=settings_languages_keyboard(set(selected), ui_lang=ui)
@@ -231,6 +244,14 @@ async def settings_save_langs(
 
     if not selected:
         await callback.answer(t(ui, "settings_select_lang"), show_alert=True)
+        return
+
+    max_langs = user_service.max_study_languages(user) if user else FREE_MAX_LANGUAGES
+    if max_langs is not None and len(selected) > max_langs:
+        await callback.answer(
+            t(ui, "settings_langs_limit_save", max=str(max_langs)),
+            show_alert=True,
+        )
         return
 
     if user:

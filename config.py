@@ -55,6 +55,9 @@ SUPPORT_URL = "https://donatty.com/creator_bots"
 DAILY_WORDS_FREE_PER_LANGUAGE = 3
 DAILY_WORDS_PREMIUM = 10
 
+# Языки для изучения: Free — максимум / Premium — безлимит
+FREE_MAX_LANGUAGES = 2
+
 # Квизы
 QUIZ_SIZE_BASIC = 5
 QUIZ_SIZE_EXTENDED = 10
