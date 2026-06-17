@@ -23,6 +23,6 @@ jobs:
             echo "::error::Add SETUP_SECRET or CRON_SECRET to GitHub repository secrets"
             exit 1
           fi
-          curl -fsS --retry 2 --retry-delay 5 \
+          curl -fsS \
             -H "Authorization: Bearer ${SECRET}" \
             "${DISPATCH_URL}"

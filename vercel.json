@@ -13,14 +13,5 @@
     "api/setup.py": { "maxDuration": 30 },
     "api/migrate.py": { "maxDuration": 30 },
     "api/cron/daily.py": { "maxDuration": 60 }
-  },
-  "crons": [
-    { "path": "/api/cron/daily", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 15 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 17 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 18 * * *" }
-  ]
+  }
 }
