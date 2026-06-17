@@ -40,7 +40,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_response(401)
             self.end_headers()
             self.wfile.write(
-                b"Unauthorized — set CRON_SECRET on Vercel or use Bearer SETUP_SECRET"
+                b"Unauthorized - set CRON_SECRET on Vercel or use Bearer SETUP_SECRET"
             )
             return
 
