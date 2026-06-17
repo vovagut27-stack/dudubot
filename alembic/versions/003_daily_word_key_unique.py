@@ -32,7 +32,11 @@ def upgrade() -> None:
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='daily_word_logs'"
         )
     ).fetchone()
-    if not row or not row[0] or "word_key" in row[0]:
+    if not row or not row[0]:
+        return
+
+    unique_part = row[0].upper().split("UNIQUE")[-1]
+    if "WORD_KEY" in unique_part or "LANGUAGE" not in unique_part:
         return
 
     bind.execute(
