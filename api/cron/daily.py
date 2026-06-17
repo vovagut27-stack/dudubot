@@ -1,5 +1,5 @@
 """
-Vercel Cron: каждый час проверяет, кому пора отправить слова (07:00, 08:00, 09:00…).
+Vercel Cron / GitHub Actions: каждый час проверяет, кому пора отправить слова.
 """
 
 from __future__ import annotations
@@ -14,17 +14,6 @@ from http.server import BaseHTTPRequestHandler
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 logger = logging.getLogger(__name__)
-
-
-def _authorized(auth_header: str | None) -> bool:
-    """Проверяет секрет Vercel Cron или CRON_SECRET."""
-    cron_secret = os.getenv("CRON_SECRET", "")
-    if not cron_secret:
-        # Без секрета — разрешаем только если явно включено (не рекомендуется)
-        return os.getenv("ALLOW_OPEN_CRON", "").lower() == "true"
-    if auth_header == f"Bearer {cron_secret}":
-        return True
-    return False
 
 
 async def _run_cron() -> dict:
@@ -45,10 +34,14 @@ class handler(BaseHTTPRequestHandler):
     """Vercel Serverless Function — GET /api/cron/daily"""
 
     def do_GET(self) -> None:
-        if not _authorized(self.headers.get("Authorization")):
+        from api._cron_auth import verify_cron_request
+
+        if not verify_cron_request(self):
             self.send_response(401)
             self.end_headers()
-            self.wfile.write(b"Unauthorized")
+            self.wfile.write(
+                b"Unauthorized — set CRON_SECRET on Vercel or use Bearer SETUP_SECRET"
+            )
             return
 
         try:

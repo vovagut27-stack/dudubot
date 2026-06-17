@@ -27,6 +27,7 @@ async def _check() -> dict:
     checks["WEBHOOK_SECRET"] = bool(os.getenv("WEBHOOK_SECRET"))
     checks["SETUP_SECRET"] = bool(os.getenv("SETUP_SECRET"))
     checks["PREMIUM_ACTIVATION_CODE"] = bool(os.getenv("PREMIUM_ACTIVATION_CODE"))
+    checks["CRON_SECRET"] = bool(os.getenv("CRON_SECRET"))
     checks["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
     admin_raw = os.getenv("ADMIN_IDS", "")
     checks["ADMIN_IDS"] = [

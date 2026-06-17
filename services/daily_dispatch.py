@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import logging
 
+from datetime import datetime, timezone
+
 from aiogram import Bot
 
 from config import Settings
@@ -39,6 +41,7 @@ async def run_daily_dispatch(
     sent = 0
     matched = 0
     skipped = 0
+    checked = 0
 
     async with session_scope() as session:
         user_service = UserService(session)
@@ -50,6 +53,7 @@ async def run_daily_dispatch(
             if not is_notification_hour(user, now):
                 continue
 
+            checked += 1
             async with session_scope() as session:
                 user_service = UserService(session)
                 db_user = await user_service.get_by_telegram_id(user.telegram_id)
@@ -84,12 +88,21 @@ async def run_daily_dispatch(
         except Exception:
             logger.exception("Ошибка рассылки user_id=%s", user.telegram_id)
 
-    if matched or skipped:
+    if matched or skipped or checked:
         logger.info(
-            "Рассылка: matched=%d sent=%d skipped(already)=%d",
+            "Рассылка: onboarded=%d hour_match=%d matched=%d sent=%d skipped(already)=%d",
+            len(users),
+            checked,
             matched,
             sent,
             skipped,
         )
 
-    return {"users": matched, "sent": sent, "skipped": skipped}
+    return {
+        "users": matched,
+        "sent": sent,
+        "skipped": skipped,
+        "hour_match": checked,
+        "onboarded": len(users),
+        "utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+    }
