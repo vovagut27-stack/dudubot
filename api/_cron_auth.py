@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, urlparse
 def verify_cron_request(handler: BaseHTTPRequestHandler) -> bool:
     """
     Разрешает вызов если:
-    - Vercel Cron (заголовок x-vercel-cron-schedule + опционально Bearer CRON_SECRET)
+    - Vercel Cron (заголовок x-vercel-cron-schedule + Bearer CRON_SECRET)
     - Authorization: Bearer CRON_SECRET или SETUP_SECRET
     - ?secret=CRON_SECRET или SETUP_SECRET (внешний cron-job.org / GitHub Actions)
     - ALLOW_OPEN_CRON=true (только dev)
@@ -20,10 +20,8 @@ def verify_cron_request(handler: BaseHTTPRequestHandler) -> bool:
     vercel_schedule = handler.headers.get("x-vercel-cron-schedule")
 
     if vercel_schedule:
-        if cron_secret:
-            auth = handler.headers.get("Authorization", "")
-            return auth == f"Bearer {cron_secret}"
-        return True
+        auth = handler.headers.get("Authorization", "")
+        return bool(cron_secret) and auth == f"Bearer {cron_secret}"
 
     auth = handler.headers.get("Authorization") or ""
     if auth.startswith("Bearer "):
