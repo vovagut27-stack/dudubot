@@ -15,7 +15,7 @@ def verify_cron_request(handler: BaseHTTPRequestHandler) -> bool:
     - ?secret=CRON_SECRET или SETUP_SECRET (внешний cron-job.org / GitHub Actions)
     - ALLOW_OPEN_CRON=true (только dev)
     """
-    cron_secret = os.getenv("CRON_SECRET", "")
+    cron_secret = os.getenv("CRON_SECRET", "") or os.getenv("SETUP_SECRET", "")
     setup_secret = os.getenv("SETUP_SECRET", "")
     vercel_schedule = handler.headers.get("x-vercel-cron-schedule")
 

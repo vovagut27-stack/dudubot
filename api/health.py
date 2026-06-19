@@ -28,6 +28,9 @@ async def _check() -> dict:
     checks["SETUP_SECRET"] = bool(os.getenv("SETUP_SECRET"))
     checks["PREMIUM_ACTIVATION_CODE"] = bool(os.getenv("PREMIUM_ACTIVATION_CODE"))
     checks["CRON_SECRET"] = bool(os.getenv("CRON_SECRET"))
+    checks["cron_auth_ready"] = bool(
+        os.getenv("CRON_SECRET") or os.getenv("SETUP_SECRET")
+    )
     checks["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
     admin_raw = os.getenv("ADMIN_IDS", "")
     checks["ADMIN_IDS"] = [
@@ -72,6 +75,12 @@ async def _check() -> dict:
     except Exception as exc:
         result["ok"] = False
         result["hint"] = f"Ошибка Telegram API: {exc}"
+
+    if checks.get("cron_auth_ready"):
+        base = checks.get("production_url", "").rstrip("/")
+        checks["dispatch_test_url"] = f"{base}/api/migrate?secret=SETUP_SECRET&run_dispatch=1"
+    else:
+        checks["dispatch_hint"] = "Добавьте SETUP_SECRET на Vercel для cron и GitHub Actions"
 
     return result
 

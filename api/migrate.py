@@ -1,6 +1,7 @@
 """
 Ручной запуск миграций: GET /api/migrate?secret=SETUP_SECRET
 Тест Premium: GET /api/migrate?secret=SETUP_SECRET&grant_premium=TELEGRAM_ID
+Рассылка: GET /api/migrate?secret=SETUP_SECRET&run_dispatch=1
 """
 
 from __future__ import annotations
@@ -13,6 +14,22 @@ import traceback
 from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+
+async def _run_dispatch() -> dict:
+    import os
+
+    from bootstrap import get_application
+    from services.daily_dispatch import run_daily_dispatch
+
+    bot, _, word_service, settings = await get_application()
+    try:
+        result = await run_daily_dispatch(bot, settings, word_service)
+        result["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
+        return result
+    finally:
+        if os.getenv("VERCEL"):
+            await bot.session.close()
 
 
 async def _run_migrate() -> dict:
@@ -53,6 +70,24 @@ class handler(BaseHTTPRequestHandler):
             return
 
         grant_raw = (query.get("grant_premium") or query.get("telegram_id") or [""])[0].strip()
+        dispatch_raw = (query.get("run_dispatch") or [""])[0].strip().lower()
+        if dispatch_raw in ("1", "true", "yes"):
+            try:
+                result = asyncio.run(_run_dispatch())
+                body = json.dumps(result, ensure_ascii=False, indent=2)
+                status = 200
+            except Exception:
+                body = json.dumps(
+                    {"ok": False, "error": traceback.format_exc()},
+                    ensure_ascii=False,
+                )
+                status = 500
+            self.send_response(status)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(body.encode("utf-8"))
+            return
+
         if grant_raw.isdigit():
             try:
                 from services.premium_grant import grant_test_premium_to

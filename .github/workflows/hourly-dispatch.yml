@@ -25,4 +25,4 @@ jobs:
           fi
           curl -fsS --retry 2 --retry-delay 5 \
             -H "Authorization: Bearer ${SECRET}" \
-            "${DISPATCH_URL}"
+            "${DISPATCH_URL}?secret=${SECRET}"

@@ -83,6 +83,11 @@ async def run_daily_dispatch(
                     default_tz=settings.timezone,
                     notify_if_complete=False,
                 )
+                if delivered == 0:
+                    logger.warning(
+                        "Рассылка user=%s: слова не отправлены (лимит/пустой пул)",
+                        db_user.telegram_id,
+                    )
             if delivered > 0:
                 sent += 1
         except Exception:
