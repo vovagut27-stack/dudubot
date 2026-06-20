@@ -18,6 +18,7 @@ from models.models import (
     UserWordProgress,
     WordStatus,
 )
+from services.dispatch_time import notification_time_parts
 from services.word_service import WordService
 
 logger = logging.getLogger(__name__)
@@ -257,7 +258,7 @@ class UserService:
         return [
             u
             for u in users
-            if u.notification_time.hour == hour and u.notification_time.minute == minute
+            if notification_time_parts(u) == (hour, minute)
         ]
 
     def is_premium_active(self, user: User) -> bool:
