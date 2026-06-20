@@ -7,17 +7,40 @@ from datetime import datetime, time
 from models.models import User
 
 
+def _coerce_notification_time(value: object) -> time:
+    """Notification time normalized from SQLAlchemy/libSQL return values."""
+    if isinstance(value, time):
+        return value
+    if isinstance(value, str) and value:
+        try:
+            return time.fromisoformat(value)
+        except ValueError:
+            parts = value.split(":")
+            try:
+                hour = int(parts[0])
+                minute = int(parts[1]) if len(parts) > 1 else 0
+                return time(hour, minute)
+            except (TypeError, ValueError):
+                pass
+    hour = getattr(value, "hour", None)
+    minute = getattr(value, "minute", 0)
+    if hour is not None:
+        try:
+            return time(int(hour), int(minute or 0))
+        except (TypeError, ValueError):
+            pass
+    return time(9, 0)
+
+
+def notification_time_parts(user: User) -> tuple[int, int]:
+    """Hour/minute for dispatch comparisons, tolerant of SQLite/Turso strings."""
+    nt = _coerce_notification_time(user.notification_time)
+    return nt.hour, nt.minute
+
+
 def notification_hour(user: User) -> int:
     """Час рассылки пользователя (устойчиво к строкам из SQLite/Turso)."""
-    nt = user.notification_time
-    if isinstance(nt, time):
-        return nt.hour
-    if isinstance(nt, str) and nt:
-        return int(nt.split(":")[0])
-    hour = getattr(nt, "hour", None)
-    if hour is not None:
-        return int(hour)
-    return 9
+    return notification_time_parts(user)[0]
 
 
 def user_local_now(user: User, default_tz: str) -> datetime:
@@ -43,4 +66,4 @@ def is_notification_hour(user: User, now_local: datetime) -> bool:
 
 def format_notification_slot(user: User) -> str:
     """Человекочитаемое время рассылки."""
-    return user.notification_time.strftime("%H:%M")
+    return _coerce_notification_time(user.notification_time).strftime("%H:%M")

@@ -13,7 +13,7 @@ from aiogram import Bot
 from config import Settings
 from database import async_session_factory, session_scope, use_sync_sessions
 from handlers.daily import send_daily_word_to_user
-from services.dispatch_time import is_notification_hour, user_local_now
+from services.dispatch_time import format_notification_slot, is_notification_hour, user_local_now
 from services.user_service import UserService
 from services.word_service import WordService
 
@@ -70,7 +70,7 @@ async def run_daily_dispatch(
                 logger.info(
                     "Рассылка user=%s slot=%s local=%s",
                     db_user.telegram_id,
-                    db_user.notification_time.strftime("%H:%M"),
+                    format_notification_slot(db_user),
                     now.strftime("%Y-%m-%d %H:%M"),
                 )
                 delivered = await send_daily_word_to_user(
