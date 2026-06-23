@@ -13,11 +13,14 @@ from aiogram import Bot
 from config import Settings
 from database import async_session_factory, session_scope, use_sync_sessions
 from handlers.daily import send_daily_word_to_user
-from services.dispatch_time import is_notification_hour, user_local_now
+from services.dispatch_time import format_notification_slot, is_notification_hour, user_local_now
 from services.user_service import UserService
 from services.word_service import WordService
 
 logger = logging.getLogger(__name__)
+
+# Лимит пользователей за один вызов cron (Vercel maxDuration 60s).
+MAX_USERS_PER_CRON_RUN = 50
 
 
 async def run_daily_dispatch(
@@ -48,6 +51,12 @@ async def run_daily_dispatch(
         users = await user_service.get_onboarded_users()
 
     for user in users:
+        if matched >= MAX_USERS_PER_CRON_RUN:
+            logger.warning(
+                "Рассылка: достигнут лимит %d пользователей за вызов",
+                MAX_USERS_PER_CRON_RUN,
+            )
+            break
         try:
             now = user_local_now(user, settings.timezone)
             if not is_notification_hour(user, now):
@@ -71,7 +80,7 @@ async def run_daily_dispatch(
                 logger.info(
                     "Рассылка user=%s slot=%s local=%s",
                     db_user.telegram_id,
-                    db_user.notification_time.strftime("%H:%M"),
+                    format_notification_slot(db_user),
                     now.strftime("%Y-%m-%d %H:%M"),
                 )
                 delivered = await send_daily_word_to_user(

@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 
 
-def _valid_codes() -> set[str]:
+def _valid_admin_codes() -> set[str]:
+    """Коды для /test_premium и админской активации."""
     codes: set[str] = set()
     setup = os.getenv("SETUP_SECRET", "").strip()
     premium = os.getenv("PREMIUM_ACTIVATION_CODE", "").strip()
@@ -16,11 +17,26 @@ def _valid_codes() -> set[str]:
     return codes
 
 
+def _valid_premium_codes() -> set[str]:
+    """Коды для /premium (без SETUP_SECRET — он только для API и админа)."""
+    premium = os.getenv("PREMIUM_ACTIVATION_CODE", "").strip()
+    if premium:
+        return {premium}
+    return _valid_admin_codes()
+
+
 def check_activation_code(token: str | None) -> bool:
-    """True, если token — SETUP_SECRET или PREMIUM_ACTIVATION_CODE."""
+    """True для админских кодов (SETUP_SECRET или PREMIUM_ACTIVATION_CODE)."""
     if not token:
         return False
-    return token.strip() in _valid_codes()
+    return token.strip() in _valid_admin_codes()
+
+
+def check_premium_activation_code(token: str | None) -> bool:
+    """True для пользовательской активации Premium через /premium."""
+    if not token:
+        return False
+    return token.strip() in _valid_premium_codes()
 
 
 def looks_like_activation_code(text: str | None) -> bool:

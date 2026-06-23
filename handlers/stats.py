@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, FREE_MAX_LANGUAGES, SUPPORTED_LANGUAGES
 from services.user_service import UserService
+from services.dispatch_time import format_notification_slot
 from services.word_service import WordService
 from utils.menu_filters import menu_btn
 
@@ -82,7 +83,7 @@ async def cmd_stats(
         f"(Free {DAILY_WORDS_FREE_PER_LANGUAGE}/язык · Premium {DAILY_WORDS_PREMIUM})\n"
         f"📊 CEFR: <b>{user.level}</b>\n"
         f"{langs_line}\n"
-        f"🕐 Уведомления: <b>{user.notification_time.strftime('%H:%M')}</b>\n"
+        f"🕐 Уведомления: <b>{format_notification_slot(user)}</b>\n"
         f"💳 Тариф: {premium}{until_line}"
     )
 

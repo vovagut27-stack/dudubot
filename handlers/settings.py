@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import CEFR_LEVELS, FREE_MAX_LANGUAGES, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES, UI_LANGUAGES
 from models.models import User
 from services.user_service import UserService
+from services.dispatch_time import format_notification_slot
 from utils.callback_guard import require_callback_message
 from utils.callbacks import parse_time_callback
 from utils.i18n import normalize_ui_language, t
@@ -50,7 +51,7 @@ def _settings_text(user: User) -> str:
         f"{t(ui, 'settings_level_line', level=user.level)}\n"
         f"{t(ui, 'settings_langs_line', langs=langs)}\n"
         f"{t(ui, 'settings_ui_line', ui_name=ui_name)}\n"
-        f"{t(ui, 'settings_time_line', time=user.notification_time.strftime('%H:%M'))}"
+        f"{t(ui, 'settings_time_line', time=format_notification_slot(user))}"
     )
 
 

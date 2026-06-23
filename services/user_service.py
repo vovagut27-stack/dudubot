@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, FREE_MAX_LANGUAGES
+from database import rollback_session
 from models.models import (
     DailyWordLog,
     PaymentLog,
@@ -190,6 +191,22 @@ class UserService:
             message_id=message_id,
         )
         self._session.add(log)
+        try:
+            await self._session.flush()
+        except Exception as exc:
+            from sqlalchemy.exc import IntegrityError
+
+            if not isinstance(exc, IntegrityError):
+                raise
+            await rollback_session(self._session)
+            retry = await self._session.execute(
+                select(DailyWordLog).where(
+                    DailyWordLog.user_id == user.id,
+                    DailyWordLog.sent_date == sent_date,
+                    DailyWordLog.word_key == word_key,
+                )
+            )
+            return retry.scalar_one_or_none()
         return log
 
     def max_study_languages(self, user: User) -> int | None:

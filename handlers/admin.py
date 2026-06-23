@@ -6,13 +6,13 @@ from __future__ import annotations
 
 import logging
 
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from config import PREMIUM_TEST_DAYS, Settings
 from handlers.premium_grant_cmd import reply_premium_granted
-from utils.setup_auth import check_activation_code, looks_like_activation_code
+from utils.setup_auth import check_activation_code
 
 logger = logging.getLogger(__name__)
 router = Router(name="admin")
@@ -124,21 +124,3 @@ async def cmd_test_premium(
         return
 
     await reply_premium_granted(message, target_id)
-
-
-@router.message(F.text.func(lambda t: bool(t) and looks_like_activation_code(t)))
-async def cmd_activation_code_message(message: Message) -> None:
-    """Код активации отдельным сообщением."""
-    if not message.from_user:
-        return
-    text = (message.text or "").strip()
-    if check_activation_code(text):
-        await reply_premium_granted(message, message.from_user.id)
-        return
-    await message.answer(
-        "❌ <b>Неверный код активации.</b>\n\n"
-        "Код должен совпадать с <code>SETUP_SECRET</code> "
-        "или <code>PREMIUM_ACTIVATION_CODE</code> на Vercel.\n\n"
-        "Попробуйте одной строкой:\n"
-        "<code>/test_premium ВАШ_КОД</code>"
-    )

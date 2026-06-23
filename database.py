@@ -337,12 +337,28 @@ def migrate_schema(bind) -> list[str]:
 
 _db_initialized = False
 _schema_ready = False
+_schema_deploy_id: str | None = None
+
+
+def _current_deploy_id() -> str:
+    import os
+
+    return (
+        os.getenv("VERCEL_GIT_COMMIT_SHA")
+        or os.getenv("VERCEL_DEPLOYMENT_ID")
+        or "local"
+    )
 
 
 async def ensure_database_ready(settings: Settings) -> None:
     """Инициализирует движок и создаёт таблицы (без импорта bot/handlers)."""
-    global _db_initialized, _schema_ready
+    global _db_initialized, _schema_ready, _schema_deploy_id
     import asyncio
+
+    deploy_id = _current_deploy_id()
+    if _schema_deploy_id != deploy_id:
+        _schema_ready = False
+        _schema_deploy_id = deploy_id
 
     if not _db_initialized:
         init_db(settings)

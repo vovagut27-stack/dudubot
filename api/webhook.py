@@ -19,6 +19,26 @@ from aiogram.types import Update
 logger = logging.getLogger(__name__)
 
 
+async def _run_catchup(
+    update: Update,
+    bot,
+    word_service,
+    settings,
+    update_id: int | None,
+) -> None:
+    try:
+        from services.dispatch_catchup import try_catchup_daily_words
+
+        if update.message:
+            await try_catchup_daily_words(update.message, bot, word_service, settings)
+        elif update.callback_query:
+            await try_catchup_daily_words(
+                update.callback_query, bot, word_service, settings
+            )
+    except Exception:
+        logger.exception("Catch-up dispatch failed update_id=%s", update_id)
+
+
 async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, str]:
     """Обрабатывает входящий update от Telegram."""
     import time
@@ -44,22 +64,11 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
 
     bot, dp, word_service, settings = await get_application()
     logger.info("Webhook init %.0f ms update_id=%s", (time.perf_counter() - t0) * 1000, update_id)
+
+    update: Update | None = None
     try:
         update = Update.model_validate(payload, context={"bot": bot})
         await dp.feed_update(bot, update)
-        try:
-            from services.dispatch_catchup import try_catchup_daily_words
-
-            if update.message:
-                await try_catchup_daily_words(
-                    update.message, bot, word_service, settings
-                )
-            elif update.callback_query:
-                await try_catchup_daily_words(
-                    update.callback_query, bot, word_service, settings
-                )
-        except Exception:
-            logger.exception("Catch-up dispatch failed update_id=%s", update_id)
         logger.info(
             "Webhook ok %.0f ms update_id=%s",
             (time.perf_counter() - t0) * 1000,
@@ -67,7 +76,8 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
         )
         return 200, "OK"
     finally:
-        # На Vercel закрываем сессию после каждого запроса
+        if update is not None:
+            await _run_catchup(update, bot, word_service, settings, update_id)
         if os.getenv("VERCEL"):
             await bot.session.close()
 

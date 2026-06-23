@@ -32,10 +32,7 @@ async def _check() -> dict:
         os.getenv("CRON_SECRET") or os.getenv("SETUP_SECRET")
     )
     checks["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
-    admin_raw = os.getenv("ADMIN_IDS", "")
-    checks["ADMIN_IDS"] = [
-        int(x.strip()) for x in admin_raw.split(",") if x.strip().isdigit()
-    ]
+    checks["dispatch_ready"] = bool(os.getenv("SETUP_SECRET") or os.getenv("CRON_SECRET"))
 
     production_url = (
         os.getenv("WEBHOOK_BASE_URL")

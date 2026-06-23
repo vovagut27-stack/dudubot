@@ -1,6 +1,5 @@
 # Почасовая рассылка «Слово дня» (Vercel Hobby не поддерживает hourly cron).
-# Добавьте в GitHub → Settings → Secrets → Actions:
-#   SETUP_SECRET — тот же, что в Vercel (или CRON_SECRET).
+# Secrets: SETUP_SECRET (обязательно) или CRON_SECRET; опционально DISPATCH_URL.
 name: Hourly word dispatch
 
 on:
@@ -16,15 +15,18 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SETUP_SECRET: ${{ secrets.SETUP_SECRET }}
-          DISPATCH_URL: https://dudubot-ten.vercel.app/api/cron/daily
+          DISPATCH_URL: ${{ secrets.DISPATCH_URL }}
         run: |
           SECRET="${CRON_SECRET:-$SETUP_SECRET}"
+          BASE="${DISPATCH_URL:-https://dudubot-ten.vercel.app}"
+          URL="${BASE%/}/api/cron/daily"
           if [ -z "$SECRET" ]; then
             echo "::error::Add SETUP_SECRET or CRON_SECRET to GitHub repository secrets"
             exit 1
           fi
           curl -fsS --retry 2 --retry-delay 5 \
             -H "Authorization: Bearer ${SECRET}" \
-            "${DISPATCH_URL}?secret=${SECRET}" \
+            "$URL" \
           || curl -fsS --retry 2 --retry-delay 5 \
-            "${DISPATCH_URL%/api/cron/daily}/api/migrate?secret=${SECRET}&run_dispatch=1"
+            -H "Authorization: Bearer ${SECRET}" \
+            "${BASE%/}/api/migrate?secret=${SECRET}&run_dispatch=1"
