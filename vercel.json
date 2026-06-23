@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "rewrites": [
-    { "source": "/", "destination": "/api/index" }
+    { "source": "/", "destination": "/api/index" },
+    { "source": "/api/cron/daily", "destination": "/api/cron_daily" }
   ],
   "functions": {
     "api/index.py": { "maxDuration": 10 },
@@ -12,10 +13,10 @@
     "api/webhook.py": { "maxDuration": 60 },
     "api/setup.py": { "maxDuration": 30 },
     "api/migrate.py": { "maxDuration": 60 },
-    "api/cron/daily.py": { "maxDuration": 60 }
+    "api/cron_daily.py": { "maxDuration": 60 }
   },
   "crons": [
-    { "path": "/api/cron/daily", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/daily", "schedule": "0 9 * * *" }
+    { "path": "/api/cron_daily", "schedule": "0 6 * * *" },
+    { "path": "/api/cron_daily", "schedule": "0 9 * * *" }
   ]
 }

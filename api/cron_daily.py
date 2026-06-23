@@ -1,5 +1,7 @@
 """
 Vercel Cron / GitHub Actions: каждый час проверяет, кому пора отправить слова.
+
+GET /api/cron_daily  (ранее /api/cron/daily — Vercel Hobby не поддерживает вложенные api/*)
 """
 
 from __future__ import annotations
@@ -11,14 +13,12 @@ import os
 import sys
 from http.server import BaseHTTPRequestHandler
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 logger = logging.getLogger(__name__)
 
 
 async def _run_cron() -> dict:
-    import os
-
     from bootstrap import get_application
     from services.daily_dispatch import run_daily_dispatch
 
@@ -31,7 +31,7 @@ async def _run_cron() -> dict:
 
 
 class handler(BaseHTTPRequestHandler):
-    """Vercel Serverless Function — GET /api/cron/daily"""
+    """Vercel Serverless Function — GET /api/cron_daily"""
 
     def do_GET(self) -> None:
         from api._cron_auth import verify_cron_request

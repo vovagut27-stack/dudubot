@@ -50,7 +50,7 @@ def _html() -> str:
     <p><b>Эндпоинты:</b></p>
     <ul>
       <li><code>/api/webhook</code> — приём сообщений от Telegram</li>
-      <li><code>/api/cron/daily</code> — ежедневная рассылка</li>
+      <li><code>/api/cron_daily</code> — ежедневная рассылка</li>
       <li><code>/api/setup</code> — регистрация webhook (один раз)</li>
     </ul>
   </div>
