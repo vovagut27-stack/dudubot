@@ -1,20 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "builds": [
+    { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "api/health.py", "use": "@vercel/python" },
+    { "src": "api/test_db.py", "use": "@vercel/python" },
+    { "src": "api/self_check.py", "use": "@vercel/python" },
+    { "src": "api/webhook.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
+    { "src": "api/setup.py", "use": "@vercel/python" },
+    { "src": "api/migrate.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
+    { "src": "api/cron_daily.py", "use": "@vercel/python", "config": { "maxDuration": 60 } }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/api/index" },
     { "source": "/api/cron/daily", "destination": "/api/cron_daily" }
   ],
-  "functions": {
-    "api/index.py": { "maxDuration": 10 },
-    "api/health.py": { "maxDuration": 15 },
-    "api/test_db.py": { "maxDuration": 30 },
-    "api/self_check.py": { "maxDuration": 30 },
-    "api/webhook.py": { "maxDuration": 60 },
-    "api/setup.py": { "maxDuration": 30 },
-    "api/migrate.py": { "maxDuration": 60 },
-    "api/cron_daily.py": { "maxDuration": 60 }
-  },
   "crons": [
     { "path": "/api/cron_daily", "schedule": "0 6 * * *" },
     { "path": "/api/cron_daily", "schedule": "0 9 * * *" }

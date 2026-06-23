@@ -11,6 +11,8 @@ venv/
 
 # Vercel
 .vercel
+api/uv.lock
+api/.python-version
 
 # IDE
 .idea/

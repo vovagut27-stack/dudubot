@@ -1,0 +1,14 @@
+[project]
+name = "word-of-the-day-bot"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.15.0,<4.0.0",
+    "SQLAlchemy[asyncio]==2.0.36",
+    "aiosqlite>=0.20.0",
+    "asyncpg>=0.30.0",
+    "sqlalchemy-libsql>=0.1.0",
+    "libsql>=0.1.0",
+    "python-dotenv>=1.0.1",
+    "greenlet>=3.0.0",
+]
