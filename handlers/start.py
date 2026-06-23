@@ -201,9 +201,9 @@ async def onboard_level(callback: CallbackQuery, state: FSMContext, session: Asy
     user.level = level
     await session.flush()
 
-    await state.update_data(level=level)
+    draft_langs = set(_draft_languages(user))
+    await state.update_data(level=level, selected_langs=list(draft_langs))
     await state.set_state(OnboardingStates.languages)
-    await state.update_data(selected_langs=_draft_languages(user))
 
     is_premium = user_service.is_premium_active(user) if user else False
     langs_hint = (
@@ -215,13 +215,13 @@ async def onboard_level(callback: CallbackQuery, state: FSMContext, session: Asy
     try:
         await msg.edit_text(
             f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
-            reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
+            reply_markup=onboarding_languages_keyboard(draft_langs, ui_lang=ui),
         )
     except Exception:
         logger.exception("onboard_level edit failed user=%s", callback.from_user.id)
         await msg.answer(
             f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
-            reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
+            reply_markup=onboarding_languages_keyboard(draft_langs, ui_lang=ui),
         )
     await callback.answer()
 

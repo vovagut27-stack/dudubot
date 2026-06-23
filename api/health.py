@@ -66,12 +66,27 @@ async def _check() -> dict:
         info = await bot.get_webhook_info()
         checks["webhook_url"] = info.url or "NOT SET — откройте /api/setup"
         checks["webhook_pending"] = info.pending_update_count
-        if not info.url:
+        expected_url = f"{production_url.rstrip('/')}/api/webhook" if production_url else ""
+        if info.url and expected_url and info.url.rstrip("/") != expected_url.rstrip("/"):
+            checks["webhook_url_mismatch"] = True
+            result["ok"] = False
+            result["hint"] = (
+                f"Webhook указывает на {info.url}, ожидается {expected_url}. "
+                f"Откройте {production_url}/api/setup?secret=ВАШ_SETUP_SECRET"
+            )
+        elif not info.url:
             result["ok"] = False
             result["hint"] = (
                 f"Webhook не зарегистрирован! Откройте: "
                 f"{production_url}/api/setup?secret=ВАШ_SETUP_SECRET"
             )
+        elif info.pending_update_count:
+            checks["webhook_hint"] = (
+                f"В очереди {info.pending_update_count} update — "
+                f"перерегистрируйте webhook: {production_url}/api/setup?secret=ВАШ_SETUP_SECRET"
+            )
+            if result.get("ok"):
+                result["hint"] = checks["webhook_hint"]
         await bot.session.close()
     except Exception as exc:
         result["ok"] = False
@@ -79,6 +94,7 @@ async def _check() -> dict:
 
     if checks.get("cron_auth_ready"):
         base = checks.get("production_url", "").rstrip("/")
+        checks["setup_url"] = f"{base}/api/setup?secret=SETUP_SECRET"
         checks["dispatch_test_url"] = f"{base}/api/migrate?secret=SETUP_SECRET&run_dispatch=1"
     else:
         checks["dispatch_hint"] = "Добавьте SETUP_SECRET на Vercel для cron и GitHub Actions"

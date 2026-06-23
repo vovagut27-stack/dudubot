@@ -6,10 +6,10 @@
     { "src": "api/health.py", "use": "@vercel/python" },
     { "src": "api/test_db.py", "use": "@vercel/python" },
     { "src": "api/self_check.py", "use": "@vercel/python" },
-    { "src": "api/webhook.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
+    { "src": "api/webhook.py", "use": "@vercel/python", "config": { "maxDuration": 60, "includeFiles": "data/**" } },
     { "src": "api/setup.py", "use": "@vercel/python" },
-    { "src": "api/migrate.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
-    { "src": "api/cron_daily.py", "use": "@vercel/python", "config": { "maxDuration": 60 } }
+    { "src": "api/migrate.py", "use": "@vercel/python", "config": { "maxDuration": 60, "includeFiles": "data/**" } },
+    { "src": "api/cron_daily.py", "use": "@vercel/python", "config": { "maxDuration": 60, "includeFiles": "data/**" } }
   ],
   "routes": [
     { "src": "/api/webhook", "dest": "/api/webhook.py" },

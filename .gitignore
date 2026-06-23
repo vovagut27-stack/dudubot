@@ -13,6 +13,8 @@ venv/
 .vercel
 api/uv.lock
 api/.python-version
+api/pyproject.toml
+uv.lock
 
 # IDE
 .idea/

@@ -41,7 +41,7 @@ async def _setup_webhook() -> dict:
         vercel_url = f"https://{vercel_url}"
 
     webhook_url = f"{vercel_url.rstrip('/')}/api/webhook"
-    secret = os.getenv("WEBHOOK_SECRET", "")
+    secret = os.getenv("WEBHOOK_SECRET", "").strip()
 
     await bot.set_webhook(
         url=webhook_url,
@@ -63,16 +63,9 @@ class handler(BaseHTTPRequestHandler):
     """GET /api/setup?secret=ВАШ_SETUP_SECRET"""
 
     def do_GET(self) -> None:
-        from urllib.parse import parse_qs, urlparse
+        from api._setup_auth import verify_setup_secret
 
-        query = parse_qs(urlparse(self.path).query)
-        secret = (query.get("secret") or [""])[0]
-        expected = os.getenv("SETUP_SECRET", "")
-
-        if not expected or secret != expected:
-            self.send_response(403)
-            self.end_headers()
-            self.wfile.write(b"Forbidden: wrong or missing ?secret=")
+        if not verify_setup_secret(self):
             return
 
         try:

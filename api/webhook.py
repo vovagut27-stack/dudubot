@@ -46,13 +46,18 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
     from bootstrap import get_application
 
     t0 = time.perf_counter()
-    expected_secret = os.getenv("WEBHOOK_SECRET", "")
+    expected_secret = os.getenv("WEBHOOK_SECRET", "").strip()
     if os.getenv("VERCEL") and not expected_secret:
         logger.error("WEBHOOK_SECRET не задан на Vercel")
         return 503, "Webhook misconfigured: WEBHOOK_SECRET required"
-    if expected_secret and secret_header != expected_secret:
-        logger.warning("Webhook 403: неверный WEBHOOK_SECRET")
-        return 403, "Forbidden: WEBHOOK_SECRET mismatch"
+    token = (secret_header or "").strip()
+    if expected_secret and token != expected_secret:
+        logger.warning(
+            "Webhook 403: неверный WEBHOOK_SECRET (got %d chars, expected %d)",
+            len(token),
+            len(expected_secret),
+        )
+        return 403, "Forbidden: WEBHOOK_SECRET mismatch — откройте /api/setup?secret=..."
 
     try:
         payload = json.loads(body.decode("utf-8"))

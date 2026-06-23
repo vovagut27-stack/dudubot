@@ -10,7 +10,7 @@ from handlers.admin import router as admin_router
 from handlers.appss import router as appss_router
 from handlers.daily import router as daily_router
 from handlers.dictionary import router as dictionary_router
-from handlers.middleware import DatabaseMiddleware
+from handlers.middleware import AppContextMiddleware, DatabaseMiddleware
 from handlers.premium import router as premium_router
 from handlers.quiz import router as quiz_router
 from handlers.settings import router as settings_router
@@ -38,12 +38,14 @@ def get_all_routers() -> list[Router]:
 
     if not _middleware_attached:
         db_middleware = DatabaseMiddleware()
+        ctx_middleware = AppContextMiddleware()
         for r in routers:
             if r.name == "admin":
                 continue
-            r.message.middleware(db_middleware)
-            r.callback_query.middleware(db_middleware)
-            r.pre_checkout_query.middleware(db_middleware)
+            for middleware in (ctx_middleware, db_middleware):
+                r.message.middleware(middleware)
+                r.callback_query.middleware(middleware)
+                r.pre_checkout_query.middleware(middleware)
         _middleware_attached = True
 
     return routers
