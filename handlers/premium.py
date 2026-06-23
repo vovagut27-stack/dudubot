@@ -120,7 +120,8 @@ async def cmd_premium(message: Message, settings: Settings, session: AsyncSessio
             return
         if looks_like_activation_code(code):
             await message.answer(
-                "❌ <b>Неверный код.</b> Проверьте SETUP_SECRET / PREMIUM_ACTIVATION_CODE на Vercel.\n"
+                "❌ <b>Неверный код.</b> Используйте код из <code>PREMIUM_ACTIVATION_CODE</code> "
+                "или оформите подписку кнопкой ниже.\n"
                 "Формат: <code>/premium ВАШ_КОД</code>"
             )
             return

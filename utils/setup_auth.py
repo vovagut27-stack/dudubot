@@ -18,11 +18,9 @@ def _valid_admin_codes() -> set[str]:
 
 
 def _valid_premium_codes() -> set[str]:
-    """Коды для /premium (без SETUP_SECRET — он только для API и админа)."""
+    """Коды для /premium (только PREMIUM_ACTIVATION_CODE, не SETUP_SECRET)."""
     premium = os.getenv("PREMIUM_ACTIVATION_CODE", "").strip()
-    if premium:
-        return {premium}
-    return _valid_admin_codes()
+    return {premium} if premium else set()
 
 
 def check_activation_code(token: str | None) -> bool:

@@ -60,10 +60,12 @@ class handler(BaseHTTPRequestHandler):
         from urllib.parse import parse_qs, urlparse
 
         query = parse_qs(urlparse(self.path).query)
-        secret = (query.get("secret") or [""])[0]
-        expected = os.getenv("SETUP_SECRET", "")
+        from api._setup_auth import allowed_setup_secrets
 
-        if not expected or secret != expected:
+        secret = (query.get("secret") or [""])[0]
+        allowed = allowed_setup_secrets()
+
+        if not allowed or secret not in allowed:
             self.send_response(403)
             self.end_headers()
             self.wfile.write(b"Forbidden: wrong or missing ?secret=")

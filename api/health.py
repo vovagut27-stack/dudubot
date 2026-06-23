@@ -31,6 +31,10 @@ async def _check() -> dict:
     checks["cron_auth_ready"] = bool(
         os.getenv("CRON_SECRET") or os.getenv("SETUP_SECRET")
     )
+    if not os.getenv("CRON_SECRET") and os.getenv("SETUP_SECRET"):
+        checks["cron_hint"] = (
+            "Для Vercel Cron задайте CRON_SECRET (= SETUP_SECRET) или используйте GitHub Actions hourly-dispatch"
+        )
     checks["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
     checks["dispatch_ready"] = bool(os.getenv("SETUP_SECRET") or os.getenv("CRON_SECRET"))
 
