@@ -59,6 +59,8 @@ class UserService:
                 telegram_id=telegram_id,
                 username=username,
                 first_name=first_name,
+                languages="",
+                level="",
             )
             self._session.add(user)
             await self._session.flush()

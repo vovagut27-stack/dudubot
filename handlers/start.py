@@ -49,6 +49,69 @@ def _welcome_text(ui_lang: str = "ru") -> str:
     )
 
 
+def _draft_languages(user) -> list[str]:
+    """Языки из черновика онбординга (БД), без пустых значений."""
+    if user is None:
+        return []
+    return [code for code in user.language_list() if code in SUPPORTED_LANGUAGES]
+
+
+def _draft_level(user) -> str | None:
+    if user is None:
+        return None
+    level = (user.level or "").strip()
+    return level if level in CEFR_LEVELS else None
+
+
+async def _sync_onboarding_state(
+    state: FSMContext,
+    user,
+) -> tuple[str | None, list[str]]:
+    """Подмешивает черновик из БД в FSM (Vercel сбрасывает MemoryStorage между запросами)."""
+    data = await state.get_data()
+    level = data.get("level") or _draft_level(user)
+    selected = list(data.get("selected_langs") or _draft_languages(user))
+    if level or selected:
+        await state.update_data(level=level, selected_langs=selected)
+    return level, selected
+
+
+async def _resume_onboarding(
+    message: Message,
+    user,
+    state: FSMContext,
+    ui: str,
+    user_service: UserService,
+) -> bool:
+    """Продолжает онбординг с сохранённого шага. True — если экран уже показан."""
+    level = _draft_level(user)
+    langs = _draft_languages(user)
+    if level and langs:
+        await state.set_state(OnboardingStates.time)
+        await state.update_data(level=level, selected_langs=langs)
+        langs_text = ", ".join(SUPPORTED_LANGUAGES.get(c, c) for c in langs)
+        await message.answer(
+            f"{t(ui, 'onboard_langs_ok', langs=langs_text)}\n\n{t(ui, 'onboard_choose_time')}",
+            reply_markup=onboarding_time_keyboard(),
+        )
+        return True
+    if level:
+        await state.set_state(OnboardingStates.languages)
+        await state.update_data(level=level, selected_langs=langs)
+        is_premium = user_service.is_premium_active(user) if user else False
+        langs_hint = (
+            t(ui, "onboard_choose_langs_premium")
+            if is_premium
+            else t(ui, "onboard_choose_langs_free", max=str(FREE_MAX_LANGUAGES))
+        )
+        await message.answer(
+            f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
+            reply_markup=onboarding_languages_keyboard(set(langs), ui_lang=ui),
+        )
+        return True
+    return False
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, session: AsyncSession, state: FSMContext) -> None:
     """Приветствие и начало онбординга или главное меню."""
@@ -87,6 +150,9 @@ async def cmd_start(message: Message, session: AsyncSession, state: FSMContext) 
         )
         return
 
+    if await _resume_onboarding(message, user, state, ui, user_service):
+        return
+
     await state.set_state(OnboardingStates.level)
     try:
         await message.answer(_welcome_text(ui), reply_markup=onboarding_level_keyboard())
@@ -117,17 +183,27 @@ async def onboard_level(callback: CallbackQuery, state: FSMContext, session: Asy
 
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
+    if user is None:
+        user = await user_service.get_or_create(
+            telegram_id=callback.from_user.id,
+            username=callback.from_user.username,
+            first_name=callback.from_user.first_name,
+        )
     if await _reject_onboarded(callback, user):
         return
     ui = normalize_ui_language(user.ui_language) if user else "ru"
 
     msg = await require_callback_message(callback)
     if msg is None:
+        await callback.answer()
         return
+
+    user.level = level
+    await session.flush()
 
     await state.update_data(level=level)
     await state.set_state(OnboardingStates.languages)
-    await state.update_data(selected_langs=[])
+    await state.update_data(selected_langs=_draft_languages(user))
 
     is_premium = user_service.is_premium_active(user) if user else False
     langs_hint = (
@@ -136,10 +212,17 @@ async def onboard_level(callback: CallbackQuery, state: FSMContext, session: Asy
         else t(ui, "onboard_choose_langs_free", max=str(FREE_MAX_LANGUAGES))
     )
 
-    await msg.edit_text(
-        f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
-        reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
-    )
+    try:
+        await msg.edit_text(
+            f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
+            reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
+        )
+    except Exception:
+        logger.exception("onboard_level edit failed user=%s", callback.from_user.id)
+        await msg.answer(
+            f"{t(ui, 'onboard_level_ok', level=level)}\n\n{langs_hint}",
+            reply_markup=onboarding_languages_keyboard(set(), ui_lang=ui),
+        )
     await callback.answer()
 
 
@@ -149,25 +232,40 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
     code = callback.data.split(":")[-1]
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
+    if user is None:
+        user = await user_service.get_or_create(
+            telegram_id=callback.from_user.id,
+            username=callback.from_user.username,
+            first_name=callback.from_user.first_name,
+        )
     if await _reject_onboarded(callback, user):
         return
     ui = normalize_ui_language(user.ui_language) if user else "ru"
+    _, selected = await _sync_onboarding_state(state, user)
 
     if code == "done":
-        data = await state.get_data()
-        selected: list[str] = list(data.get("selected_langs", []))
         if not selected:
             await callback.answer(t(ui, "settings_select_lang"), show_alert=True)
             return
+        user.languages = ",".join(sorted(selected))
+        await session.flush()
         await state.set_state(OnboardingStates.time)
         langs = ", ".join(SUPPORTED_LANGUAGES.get(c, c) for c in selected)
         msg = await require_callback_message(callback)
         if msg is None:
+            await callback.answer()
             return
-        await msg.edit_text(
-            f"{t(ui, 'onboard_langs_ok', langs=langs)}\n\n{t(ui, 'onboard_choose_time')}",
-            reply_markup=onboarding_time_keyboard(),
-        )
+        try:
+            await msg.edit_text(
+                f"{t(ui, 'onboard_langs_ok', langs=langs)}\n\n{t(ui, 'onboard_choose_time')}",
+                reply_markup=onboarding_time_keyboard(),
+            )
+        except Exception:
+            logger.exception("onboard_lang done edit failed user=%s", callback.from_user.id)
+            await msg.answer(
+                f"{t(ui, 'onboard_langs_ok', langs=langs)}\n\n{t(ui, 'onboard_choose_time')}",
+                reply_markup=onboarding_time_keyboard(),
+            )
         await callback.answer()
         return
 
@@ -175,8 +273,6 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
         await callback.answer("Неизвестный язык", show_alert=True)
         return
 
-    data = await state.get_data()
-    selected: list[str] = list(data.get("selected_langs", []))
     if code in selected:
         selected.remove(code)
     else:
@@ -188,15 +284,21 @@ async def onboard_language(callback: CallbackQuery, state: FSMContext, session: 
             )
             return
         selected.append(code)
+    user.languages = ",".join(sorted(selected))
+    await session.flush()
     await state.update_data(selected_langs=selected)
 
     msg = await require_callback_message(callback)
     if msg is None:
+        await callback.answer()
         return
 
-    await msg.edit_reply_markup(
-        reply_markup=onboarding_languages_keyboard(set(selected), ui_lang=ui)
-    )
+    try:
+        await msg.edit_reply_markup(
+            reply_markup=onboarding_languages_keyboard(set(selected), ui_lang=ui)
+        )
+    except Exception:
+        logger.exception("onboard_lang toggle failed user=%s", callback.from_user.id)
     await callback.answer()
 
 
@@ -222,11 +324,8 @@ async def onboard_time(
         await callback.answer("Неверное время", show_alert=True)
         return
 
-    data = await state.get_data()
-    level = data.get("level")
-    selected: list[str] = [
-        code for code in data.get("selected_langs", []) if code in SUPPORTED_LANGUAGES
-    ]
+    level, selected = await _sync_onboarding_state(state, user)
+    selected = [code for code in selected if code in SUPPORTED_LANGUAGES]
 
     if level not in CEFR_LEVELS or not selected:
         await callback.answer("Начните онбординг заново: /start", show_alert=True)

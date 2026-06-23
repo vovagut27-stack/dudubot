@@ -11,9 +11,17 @@
     { "src": "api/migrate.py", "use": "@vercel/python", "config": { "maxDuration": 60 } },
     { "src": "api/cron_daily.py", "use": "@vercel/python", "config": { "maxDuration": 60 } }
   ],
-  "rewrites": [
-    { "source": "/", "destination": "/api/index" },
-    { "source": "/api/cron/daily", "destination": "/api/cron_daily" }
+  "routes": [
+    { "src": "/api/webhook", "dest": "/api/webhook.py" },
+    { "src": "/api/health", "dest": "/api/health.py" },
+    { "src": "/api/setup", "dest": "/api/setup.py" },
+    { "src": "/api/migrate", "dest": "/api/migrate.py" },
+    { "src": "/api/cron_daily", "dest": "/api/cron_daily.py" },
+    { "src": "/api/cron/daily", "dest": "/api/cron_daily.py" },
+    { "src": "/api/test_db", "dest": "/api/test_db.py" },
+    { "src": "/api/self_check", "dest": "/api/self_check.py" },
+    { "src": "/api/index", "dest": "/api/index.py" },
+    { "src": "/", "dest": "/api/index.py" }
   ],
   "crons": [
     { "path": "/api/cron_daily", "schedule": "0 6 * * *" },
