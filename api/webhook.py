@@ -42,11 +42,24 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
     update_id = payload.get("update_id")
     logger.info("Webhook update_id=%s", update_id)
 
-    bot, dp, _, _ = await get_application()
+    bot, dp, word_service, settings = await get_application()
     logger.info("Webhook init %.0f ms update_id=%s", (time.perf_counter() - t0) * 1000, update_id)
     try:
         update = Update.model_validate(payload, context={"bot": bot})
         await dp.feed_update(bot, update)
+        try:
+            from services.dispatch_catchup import try_catchup_daily_words
+
+            if update.message:
+                await try_catchup_daily_words(
+                    update.message, bot, word_service, settings
+                )
+            elif update.callback_query:
+                await try_catchup_daily_words(
+                    update.callback_query, bot, word_service, settings
+                )
+        except Exception:
+            logger.exception("Catch-up dispatch failed update_id=%s", update_id)
         logger.info(
             "Webhook ok %.0f ms update_id=%s",
             (time.perf_counter() - t0) * 1000,

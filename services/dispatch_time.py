@@ -41,6 +41,16 @@ def is_notification_hour(user: User, now_local: datetime) -> bool:
     return notification_hour(user) == now_local.hour
 
 
+def is_past_notification_today(user: User, now_local: datetime) -> bool:
+    """True, если время рассылки сегодня уже наступило (для catch-up после cron)."""
+    slot = notification_hour(user)
+    if now_local.hour > slot:
+        return True
+    if now_local.hour == slot and now_local.minute >= 1:
+        return True
+    return False
+
+
 def format_notification_slot(user: User) -> str:
     """Человекочитаемое время рассылки."""
     return user.notification_time.strftime("%H:%M")

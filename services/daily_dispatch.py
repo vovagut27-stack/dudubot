@@ -54,6 +54,7 @@ async def run_daily_dispatch(
                 continue
 
             checked += 1
+            delivered = 0
             async with session_scope() as session:
                 user_service = UserService(session)
                 db_user = await user_service.get_by_telegram_id(user.telegram_id)
