@@ -28,6 +28,15 @@ async def _check() -> dict:
     checks["SETUP_SECRET"] = bool(os.getenv("SETUP_SECRET"))
     checks["PREMIUM_ACTIVATION_CODE"] = bool(os.getenv("PREMIUM_ACTIVATION_CODE"))
     checks["CRON_SECRET"] = bool(os.getenv("CRON_SECRET"))
+    checks["GROQ_API_KEY"] = bool(os.getenv("GROQ_API_KEY"))
+    checks["XAI_API_KEY"] = bool(os.getenv("XAI_API_KEY"))
+    checks["ai_ready"] = checks["GROQ_API_KEY"] or checks["XAI_API_KEY"]
+    checks["ai_model"] = (
+        os.getenv("AI_MODEL")
+        or os.getenv("GROQ_MODEL")
+        or os.getenv("XAI_MODEL")
+        or "default"
+    )
     checks["cron_auth_ready"] = bool(
         os.getenv("CRON_SECRET") or os.getenv("SETUP_SECRET")
     )

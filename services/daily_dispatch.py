@@ -13,7 +13,11 @@ from aiogram import Bot
 from config import Settings
 from database import async_session_factory, session_scope, use_sync_sessions
 from handlers.daily import send_daily_word_to_user
-from services.dispatch_time import format_notification_slot, is_notification_hour, user_local_now
+from services.dispatch_time import (
+    format_notification_slot,
+    is_past_notification_today,
+    user_local_now,
+)
 from services.user_service import UserService
 from services.word_service import WordService
 
@@ -32,7 +36,8 @@ async def run_daily_dispatch(
     Отправляет слова пользователям, у которых наступил час уведомления.
 
     Слоты: 07:00, 08:00, 09:00, 12:00, 18:00, 20:00, 21:00 (локальное время).
-    Cron вызывается каждый час — попадание в слот по часу, не по минуте.
+    GitHub/Vercel cron может задерживаться, поэтому отправляем всем, чьё время
+    сегодня уже наступило. Повтор за день блокируется daily_word_logs.
 
     Returns:
         Статистика: {"users": N, "sent": M, "skipped": K}
@@ -59,7 +64,7 @@ async def run_daily_dispatch(
             break
         try:
             now = user_local_now(user, settings.timezone)
-            if not is_notification_hour(user, now):
+            if not is_past_notification_today(user, now):
                 continue
 
             checked += 1
@@ -105,7 +110,7 @@ async def run_daily_dispatch(
 
     if matched or skipped or checked:
         logger.info(
-            "Рассылка: onboarded=%d hour_match=%d matched=%d sent=%d skipped(already)=%d",
+            "Рассылка: onboarded=%d due=%d matched=%d sent=%d skipped(already)=%d",
             len(users),
             checked,
             matched,
@@ -117,6 +122,7 @@ async def run_daily_dispatch(
         "users": matched,
         "sent": sent,
         "skipped": skipped,
+        "due": checked,
         "hour_match": checked,
         "onboarded": len(users),
         "utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),

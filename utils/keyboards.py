@@ -100,6 +100,9 @@ def word_actions_keyboard(word_key: str, *, in_dictionary: bool = False) -> Inli
                 InlineKeyboardButton(text="💬 Примеры", callback_data=f"word:examples:{word_key}"),
                 InlineKeyboardButton(text=fav_text, callback_data=f"word:dict:{word_key}"),
             ],
+            [
+                InlineKeyboardButton(text="🤖 AI-разбор", callback_data=f"word:ai:{word_key}"),
+            ],
         ]
     )
 

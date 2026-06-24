@@ -20,6 +20,7 @@ from services.user_service import UserService
 from services.word_service import WordEntry, WordService
 from utils.callback_guard import require_callback_message
 from utils.callback_keys import word_key_from_callback
+from utils.html_escape import h
 from utils.kb import word_actions_keyboard
 from utils.menu_filters import menu_btn
 
@@ -298,6 +299,56 @@ async def word_examples(
 
     await msg.answer(word_service.format_examples(word))
     await callback.answer()
+
+
+@router.callback_query(F.data.startswith("word:ai:"))
+async def word_ai_explain(
+    callback: CallbackQuery,
+    session: AsyncSession,
+    word_service: WordService,
+) -> None:
+    """AI-разбор слова: объяснение, новые примеры, мнемоника."""
+    try:
+        word_key = word_key_from_callback(callback.data, "word:ai:")
+    except ValueError:
+        await callback.answer("Ошибка данных", show_alert=True)
+        return
+
+    word = word_service.get_by_key(word_key)
+    if word is None:
+        await callback.answer("Слово не найдено", show_alert=True)
+        return
+
+    from services.ai_assistant import ai_ready, explain_word
+
+    if not ai_ready():
+        await callback.answer(
+            "AI пока не подключён. Добавьте GROQ_API_KEY или XAI_API_KEY на Vercel.",
+            show_alert=True,
+        )
+        return
+
+    msg = await require_callback_message(callback)
+    if msg is None:
+        return
+
+    await callback.answer("Готовлю AI-разбор...")
+
+    user_service = UserService(session)
+    user = await user_service.get_by_telegram_id(callback.from_user.id)
+    ui = getattr(user, "ui_language", None) or "ru"
+
+    try:
+        explanation = await explain_word(word, ui_language=ui)
+    except Exception:
+        logger.exception("AI explain failed word=%s user=%s", word.key, callback.from_user.id)
+        await msg.answer(
+            "😔 AI сейчас не ответил. Проверьте ключ <code>GROQ_API_KEY</code>/<code>XAI_API_KEY</code> "
+            "и модель на Vercel."
+        )
+        return
+
+    await msg.answer(f"🤖 <b>AI-разбор: {h(word.word)}</b>\n\n{explanation[:3500]}")
 
 
 @router.callback_query(F.data.startswith("word:dict:"))
