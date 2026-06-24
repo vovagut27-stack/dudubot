@@ -12,6 +12,9 @@ from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+TELEGRAM_CHECK_TIMEOUT = 10.0
+AI_PROBE_TIMEOUT = 18.0
+
 
 async def _check() -> dict:
     result: dict = {
@@ -70,9 +73,21 @@ async def _check() -> dict:
         from aiogram import Bot
 
         bot = Bot(token=os.getenv("BOT_TOKEN", ""))
-        me = await bot.get_me()
+        try:
+            me = await asyncio.wait_for(bot.get_me(), timeout=TELEGRAM_CHECK_TIMEOUT)
+            info = await asyncio.wait_for(
+                bot.get_webhook_info(), timeout=TELEGRAM_CHECK_TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            result["ok"] = False
+            result["hint"] = (
+                f"Telegram API не ответил за {int(TELEGRAM_CHECK_TIMEOUT)}s — "
+                "повторите /api/health позже"
+            )
+            await bot.session.close()
+            return result
+
         checks["bot_name"] = me.username
-        info = await bot.get_webhook_info()
         checks["webhook_url"] = info.url or "NOT SET — откройте /api/setup"
         checks["webhook_pending"] = info.pending_update_count
         expected_url = f"{production_url.rstrip('/')}/api/webhook" if production_url else ""
@@ -100,6 +115,24 @@ async def _check() -> dict:
     except Exception as exc:
         result["ok"] = False
         result["hint"] = f"Ошибка Telegram API: {exc}"
+
+    if checks.get("ai_ready"):
+        try:
+            from services.ai_assistant import probe_ai_connection
+
+            checks["ai_probe"] = await asyncio.wait_for(
+                probe_ai_connection(), timeout=AI_PROBE_TIMEOUT
+            )
+            if not checks["ai_probe"].get("ok"):
+                checks["ai_hint"] = (
+                    "AI-ключ задан, но API не отвечает. "
+                    "Проверьте GROQ_API_KEY или добавьте XAI_API_KEY как запасной."
+                )
+        except asyncio.TimeoutError:
+            checks["ai_probe"] = {"ok": False, "error": "timeout"}
+            checks["ai_hint"] = "AI probe timeout — провайдер не ответил вовремя"
+        except Exception as exc:
+            checks["ai_probe"] = {"ok": False, "error": str(exc)[:200]}
 
     if checks.get("cron_auth_ready"):
         base = checks.get("production_url", "").rstrip("/")

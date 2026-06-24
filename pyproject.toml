@@ -3,6 +3,7 @@ name = "word-of-the-day-bot"
 version = "1.0.0"
 requires-python = ">=3.12"
 dependencies = [
+    "aiohttp>=3.9.0",
     "aiogram>=3.15.0,<4.0.0",
     "SQLAlchemy[asyncio]==2.0.36",
     "aiosqlite>=0.20.0",
