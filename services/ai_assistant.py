@@ -99,7 +99,9 @@ def _call_openai_compatible(url: str, api_key: str, model: str, prompt: str) -> 
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
+            "Accept": "application/json",
             "Content-Type": "application/json",
+            "User-Agent": "DuduDayBot/1.0 (+https://dudubot-ten.vercel.app)",
         },
         method="POST",
     )
