@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from aiogram import Bot
 
 from config import Settings
-from database import async_session_factory, session_scope, use_sync_sessions
+import database
+from database import session_scope
 from handlers.daily import send_daily_word_to_user
 from services.dispatch_time import (
     format_notification_slot,
@@ -42,7 +43,7 @@ async def run_daily_dispatch(
     Returns:
         Статистика: {"users": N, "sent": M, "skipped": K}
     """
-    if async_session_factory is None and not use_sync_sessions:
+    if database.async_session_factory is None and not database.use_sync_sessions:
         logger.warning("Session factory не инициализирована")
         return {"users": 0, "sent": 0, "skipped": 0}
 
