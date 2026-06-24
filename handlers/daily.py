@@ -20,7 +20,6 @@ from services.user_service import UserService
 from services.word_service import WordEntry, WordService
 from utils.callback_guard import require_callback_message
 from utils.callback_keys import word_key_from_callback
-from utils.html_escape import h
 from utils.kb import word_actions_keyboard
 from utils.menu_filters import menu_btn
 
@@ -319,7 +318,7 @@ async def word_ai_explain(
         await callback.answer("Слово не найдено", show_alert=True)
         return
 
-    from services.ai_assistant import ai_ready, explain_word
+    from services.ai_assistant import ai_ready, explain_word, fallback_explanation
 
     if not ai_ready():
         await callback.answer(
@@ -342,13 +341,12 @@ async def word_ai_explain(
         explanation = await explain_word(word, ui_language=ui)
     except Exception:
         logger.exception("AI explain failed word=%s user=%s", word.key, callback.from_user.id)
-        await msg.answer(
-            "😔 AI сейчас не ответил. Проверьте ключ <code>GROQ_API_KEY</code>/<code>XAI_API_KEY</code> "
-            "и модель на Vercel."
-        )
-        return
+        explanation = fallback_explanation(word)
 
-    await msg.answer(f"🤖 <b>AI-разбор: {h(word.word)}</b>\n\n{explanation[:3500]}")
+    await msg.answer(
+        f"🤖 AI-разбор: {word.word}\n\n{explanation[:3500]}",
+        parse_mode=None,
+    )
 
 
 @router.callback_query(F.data.startswith("word:dict:"))

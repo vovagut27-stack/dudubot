@@ -16,6 +16,16 @@ logger = logging.getLogger(__name__)
 AI_TIMEOUT_SECONDS = 25
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 XAI_URL = "https://api.x.ai/v1/chat/completions"
+GROQ_FALLBACK_MODELS = (
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+)
+XAI_FALLBACK_MODELS = (
+    "grok-3-mini",
+    "grok-4-fast",
+)
 
 
 def ai_ready() -> bool:
@@ -36,13 +46,15 @@ def _provider_config() -> tuple[str, str, str]:
     raise RuntimeError("AI key is not configured")
 
 
-def _model_for(provider: str) -> str:
+def _models_for(provider: str) -> list[str]:
     explicit = os.getenv("AI_MODEL", "").strip()
     if explicit:
-        return explicit
+        return [explicit]
     if provider == "xai":
-        return os.getenv("XAI_MODEL", "grok-3-mini").strip()
-    return os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip()
+        configured = os.getenv("XAI_MODEL", "").strip()
+        return [configured] if configured else list(XAI_FALLBACK_MODELS)
+    configured = os.getenv("GROQ_MODEL", "").strip()
+    return [configured] if configured else list(GROQ_FALLBACK_MODELS)
 
 
 def _prompt(word: WordEntry, ui_language: str) -> str:
@@ -102,10 +114,50 @@ def _call_openai_compatible(url: str, api_key: str, model: str, prompt: str) -> 
     return (data["choices"][0]["message"]["content"] or "").strip()
 
 
+def fallback_explanation(word: WordEntry) -> str:
+    """Локальный разбор, если AI API временно недоступен."""
+    examples = "\n".join(
+        f"- {ex.text}" + (f" — {ex.translation}" if ex.translation else "")
+        for ex in word.examples[:2]
+    )
+    parts = [
+        f"{word.word} — {word.translation}",
+        f"Уровень: {word.level}",
+    ]
+    if word.transcription:
+        parts.append(f"Транскрипция: {word.transcription}")
+    if word.part_of_speech:
+        parts.append(f"Часть речи: {word.part_of_speech}")
+    if examples:
+        parts.append(f"\nПримеры:\n{examples}")
+    parts.append("\nAI временно недоступен, но словарный разбор уже можно использовать.")
+    return "\n".join(parts)
+
+
 async def explain_word(word: WordEntry, *, ui_language: str = "ru") -> str:
     """Генерирует AI-разбор слова."""
     provider, url, api_key = _provider_config()
-    model = _model_for(provider)
     prompt = _prompt(word, ui_language)
-    logger.info("AI explain word=%s provider=%s model=%s", word.key, provider, model)
-    return await asyncio.to_thread(_call_openai_compatible, url, api_key, model, prompt)
+    last_error: Exception | None = None
+    for model in _models_for(provider):
+        logger.info("AI explain word=%s provider=%s model=%s", word.key, provider, model)
+        try:
+            result = await asyncio.to_thread(
+                _call_openai_compatible,
+                url,
+                api_key,
+                model,
+                prompt,
+            )
+            if result:
+                return result
+        except Exception as exc:
+            last_error = exc
+            logger.warning(
+                "AI model failed word=%s provider=%s model=%s error=%s",
+                word.key,
+                provider,
+                model,
+                exc,
+            )
+    raise RuntimeError(f"All AI models failed: {last_error}") from last_error

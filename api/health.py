@@ -35,7 +35,7 @@ async def _check() -> dict:
         os.getenv("AI_MODEL")
         or os.getenv("GROQ_MODEL")
         or os.getenv("XAI_MODEL")
-        or "default"
+        or "openai/gpt-oss-20b"
     )
     checks["cron_auth_ready"] = bool(
         os.getenv("CRON_SECRET") or os.getenv("SETUP_SECRET")
