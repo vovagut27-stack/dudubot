@@ -36,7 +36,14 @@ def create_dispatcher() -> Dispatcher:
 
     @dp.errors()
     async def global_error_handler(event: ErrorEvent, bot: Bot) -> None:
-        logger.exception("Необработанная ошибка: %s", event.exception)
+        err = event.exception
+        detail = f"{type(err).__name__}: {err}"
+        detail_lower = detail.lower()
+        if "query is too old" in detail_lower or "query id is invalid" in detail_lower:
+            logger.warning("Callback timeout (ignored): %s", detail)
+            return
+
+        logger.exception("Необработанная ошибка: %s", err)
         update = event.update
         chat_id = None
         if update.message:
@@ -46,8 +53,6 @@ def create_dispatcher() -> Dispatcher:
 
         if chat_id:
             try:
-                err = event.exception
-                detail = f"{type(err).__name__}: {err}"
                 logger.error("Handler error for chat %s: %s", chat_id, detail)
                 await bot.send_message(
                     chat_id,

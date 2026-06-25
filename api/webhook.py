@@ -18,6 +18,44 @@ from aiogram.types import Update
 
 logger = logging.getLogger(__name__)
 
+WORD_CALLBACK_HINTS = {
+    "word:ai:": "Готовлю AI-разбор...",
+}
+
+
+async def _early_ack_callback(payload: dict) -> None:
+    """Отвечает на callback до тяжёлой инициализации (cold start Vercel > 10s)."""
+    raw = payload.get("callback_query")
+    if not raw:
+        return
+
+    token = os.getenv("BOT_TOKEN", "").strip()
+    if not token:
+        return
+
+    from aiogram import Bot
+    from aiogram.types import CallbackQuery
+
+    from utils.callback_guard import answer_callback
+
+    data = raw.get("data") or ""
+    if not data.startswith("word:"):
+        return
+
+    hint = next(
+        (text for prefix, text in WORD_CALLBACK_HINTS.items() if data.startswith(prefix)),
+        None,
+    )
+
+    bot = Bot(token=token)
+    try:
+        callback = CallbackQuery.model_validate(raw)
+        await answer_callback(callback, hint)
+    except Exception:
+        logger.exception("Early callback ack failed data=%s", data[:80])
+    finally:
+        await bot.session.close()
+
 
 async def _run_catchup(
     update: Update,
@@ -66,6 +104,8 @@ async def _handle_webhook(body: bytes, secret_header: str | None) -> tuple[int, 
 
     update_id = payload.get("update_id")
     logger.info("Webhook update_id=%s", update_id)
+
+    await _early_ack_callback(payload)
 
     bot, dp, word_service, settings = await get_application()
     logger.info("Webhook init %.0f ms update_id=%s", (time.perf_counter() - t0) * 1000, update_id)

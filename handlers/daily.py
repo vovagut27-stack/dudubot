@@ -18,7 +18,7 @@ from models.models import User, WordStatus
 from services.dispatch_time import user_local_now
 from services.user_service import UserService
 from services.word_service import WordEntry, WordService
-from utils.callback_guard import require_callback_message
+from utils.callback_guard import answer_callback_or_message, require_callback_message
 from utils.callback_keys import word_key_from_callback
 from utils.kb import word_actions_keyboard
 from utils.menu_filters import menu_btn
@@ -232,24 +232,28 @@ async def word_learned(
     try:
         word_key = word_key_from_callback(callback.data, "word:learned:")
     except ValueError:
-        await callback.answer("Ошибка данных", show_alert=True)
+        await answer_callback_or_message(callback, "Ошибка данных", show_alert=True)
         return
 
     word = word_service.get_by_key(word_key)
     if word is None:
-        await callback.answer("Слово не найдено", show_alert=True)
+        await answer_callback_or_message(callback, "Слово не найдено", show_alert=True)
         return
 
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     if user is None:
-        await callback.answer("Пользователь не найден", show_alert=True)
+        chat_msg = callback.message
+        if chat_msg is not None:
+            await chat_msg.answer("Пользователь не найден")
         return
 
     _, msg = await user_service.mark_word(
         user, word_key, WordStatus.LEARNED, word_service=word_service
     )
-    await callback.answer(msg[:200], show_alert=True)
+    chat_msg = callback.message
+    if chat_msg is not None:
+        await chat_msg.answer(msg[:200])
 
 
 @router.callback_query(F.data.startswith("word:unknown:"))
@@ -261,19 +265,23 @@ async def word_unknown(
     try:
         word_key = word_key_from_callback(callback.data, "word:unknown:")
     except ValueError:
-        await callback.answer("Ошибка данных", show_alert=True)
+        await answer_callback_or_message(callback, "Ошибка данных", show_alert=True)
         return
 
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
     if user is None:
-        await callback.answer("Ошибка", show_alert=True)
+        chat_msg = callback.message
+        if chat_msg is not None:
+            await chat_msg.answer("Ошибка")
         return
 
     _, msg = await user_service.mark_word(
         user, word_key, WordStatus.UNKNOWN, word_service=word_service
     )
-    await callback.answer(msg[:200], show_alert=True)
+    chat_msg = callback.message
+    if chat_msg is not None:
+        await chat_msg.answer(msg[:200])
 
 
 @router.callback_query(F.data.startswith("word:examples:"))
@@ -284,12 +292,12 @@ async def word_examples(
     try:
         word_key = word_key_from_callback(callback.data, "word:examples:")
     except ValueError:
-        await callback.answer("Ошибка данных", show_alert=True)
+        await answer_callback_or_message(callback, "Ошибка данных", show_alert=True)
         return
 
     word = word_service.get_by_key(word_key)
     if word is None:
-        await callback.answer("Слово не найдено", show_alert=True)
+        await answer_callback_or_message(callback, "Слово не найдено", show_alert=True)
         return
 
     msg = await require_callback_message(callback)
@@ -297,7 +305,6 @@ async def word_examples(
         return
 
     await msg.answer(word_service.format_examples(word))
-    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("word:ai:"))
@@ -310,28 +317,27 @@ async def word_ai_explain(
     try:
         word_key = word_key_from_callback(callback.data, "word:ai:")
     except ValueError:
-        await callback.answer("Ошибка данных", show_alert=True)
+        await answer_callback_or_message(callback, "Ошибка данных", show_alert=True)
         return
 
     word = word_service.get_by_key(word_key)
     if word is None:
-        await callback.answer("Слово не найдено", show_alert=True)
+        await answer_callback_or_message(callback, "Слово не найдено", show_alert=True)
         return
 
     from services.ai_assistant import ai_ready, explain_word, fallback_explanation
 
     if not ai_ready():
-        await callback.answer(
+        await answer_callback_or_message(
+            callback,
             "AI пока не подключён. Добавьте GROQ_API_KEY или XAI_API_KEY на Vercel.",
             show_alert=True,
         )
         return
 
-    msg = await require_callback_message(callback)
+    msg = callback.message
     if msg is None:
         return
-
-    await callback.answer("Готовлю AI-разбор...")
 
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
@@ -358,18 +364,19 @@ async def word_add_dictionary(
     try:
         word_key = word_key_from_callback(callback.data, "word:dict:")
     except ValueError:
-        await callback.answer("Ошибка данных", show_alert=True)
+        await answer_callback_or_message(callback, "Ошибка данных", show_alert=True)
         return
 
     user_service = UserService(session)
     user = await user_service.get_by_telegram_id(callback.from_user.id)
 
     if user is None:
-        await callback.answer("Ошибка", show_alert=True)
+        await answer_callback_or_message(callback, "Ошибка", show_alert=True)
         return
 
     if not user_service.is_premium_active(user):
-        await callback.answer(
+        await answer_callback_or_message(
+            callback,
             "📖 Личный словарь доступен в Premium! /premium",
             show_alert=True,
         )
@@ -378,9 +385,9 @@ async def word_add_dictionary(
     _, msg = await user_service.mark_word(
         user, word_key, WordStatus.FAVORITE, word_service=word_service
     )
-    await callback.answer(msg, show_alert=True)
-
-    chat_msg = await require_callback_message(callback)
+    chat_msg = callback.message
+    if chat_msg is not None:
+        await chat_msg.answer(msg)
     if chat_msg and chat_msg.reply_markup:
         await chat_msg.edit_reply_markup(
             reply_markup=word_actions_keyboard(word_key, in_dictionary=True)

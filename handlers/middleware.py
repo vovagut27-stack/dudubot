@@ -8,11 +8,38 @@ import logging
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject
+from aiogram.types import CallbackQuery, TelegramObject
 
 from database import rollback_session, session_scope
+from utils.callback_guard import answer_callback
 
 logger = logging.getLogger(__name__)
+
+WORD_CALLBACK_HINTS = {
+    "word:ai:": "Готовлю AI-разбор...",
+}
+
+
+class EarlyCallbackAckMiddleware(BaseMiddleware):
+    """Сразу закрывает callback до DB/AI — иначе Telegram даёт timeout через 10s."""
+
+    async def __call__(
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: dict[str, Any],
+    ) -> Any:
+        if isinstance(event, CallbackQuery) and event.data and event.data.startswith("word:"):
+            hint = next(
+                (
+                    text
+                    for prefix, text in WORD_CALLBACK_HINTS.items()
+                    if event.data.startswith(prefix)
+                ),
+                None,
+            )
+            await answer_callback(event, hint)
+        return await handler(event, data)
 
 
 def _ensure_app_context(data: dict[str, Any]) -> None:
