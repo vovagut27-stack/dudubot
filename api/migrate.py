@@ -1,6 +1,7 @@
 """
 Ручной запуск миграций: GET /api/migrate?secret=SETUP_SECRET
 Тест Premium: GET /api/migrate?secret=SETUP_SECRET&grant_premium=TELEGRAM_ID
+Premium по @username: GET /api/migrate?secret=SETUP_SECRET&grant_premium_user=Millka_2MKY
 Рассылка: GET /api/migrate?secret=SETUP_SECRET&run_dispatch=1
 """
 
@@ -72,12 +73,40 @@ class handler(BaseHTTPRequestHandler):
             return
 
         grant_raw = (query.get("grant_premium") or query.get("telegram_id") or [""])[0].strip()
+        grant_user = (query.get("grant_premium_user") or query.get("username") or [""])[0].strip()
         dispatch_raw = (query.get("run_dispatch") or [""])[0].strip().lower()
         if dispatch_raw in ("1", "true", "yes"):
             try:
                 result = asyncio.run(_run_dispatch())
                 body = json.dumps(result, ensure_ascii=False, indent=2)
                 status = 200
+            except Exception:
+                body = json.dumps(
+                    {"ok": False, "error": traceback.format_exc()},
+                    ensure_ascii=False,
+                )
+                status = 500
+            self.send_response(status)
+            self.send_header("Content-type", "application/json; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(body.encode("utf-8"))
+            return
+
+        if grant_user:
+            try:
+                from services.premium_grant import grant_test_premium_by_username
+
+                days_raw = (query.get("days") or ["365"])[0].strip()
+                days = int(days_raw) if days_raw.isdigit() else 365
+                result = asyncio.run(
+                    grant_test_premium_by_username(
+                        grant_user,
+                        days=days if days > 0 else None,
+                    )
+                )
+                result["deploy_sha"] = os.getenv("VERCEL_GIT_COMMIT_SHA", "unknown")
+                body = json.dumps(result, ensure_ascii=False, indent=2)
+                status = 200 if result.get("ok") else 404
             except Exception:
                 body = json.dumps(
                     {"ok": False, "error": traceback.format_exc()},
