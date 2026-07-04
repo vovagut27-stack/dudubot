@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import CEFR_LEVELS, FREE_MAX_LANGUAGES, NOTIFICATION_TIMES, SUPPORTED_LANGUAGES
 from services.user_service import UserService
-from utils.callback_guard import require_callback_message
+from utils.callback_guard import answer_callback, require_callback_message
 from utils.html_escape import h
 from utils.callbacks import parse_time_callback
 from utils.i18n import normalize_ui_language, supported_languages_list, t
@@ -171,6 +171,40 @@ async def _reject_onboarded(callback: CallbackQuery, user) -> bool:
         await callback.answer("Настройка уже завершена. Используйте /settings", show_alert=True)
         return True
     return False
+
+
+async def _show_onboarding_done(
+    callback: CallbackQuery,
+    msg: Message,
+    ui: str,
+    *,
+    level: str,
+    langs: str,
+    time_str: str,
+) -> None:
+    """Показывает финальный экран без отката уже сохранённого онбординга."""
+    done_text = t(ui, "onboard_done", level=level, langs=langs, time=time_str)
+    try:
+        await msg.edit_text(done_text)
+    except Exception:
+        logger.exception("onboard_time edit failed user=%s", callback.from_user.id)
+        try:
+            await msg.answer(done_text)
+        except Exception:
+            logger.exception(
+                "onboard_time fallback answer failed user=%s",
+                callback.from_user.id,
+            )
+
+    try:
+        await msg.answer(
+            t(ui, "onboard_main_menu"),
+            reply_markup=main_menu_keyboard(ui),
+        )
+    except Exception:
+        logger.exception("onboard_time menu answer failed user=%s", callback.from_user.id)
+
+    await answer_callback(callback, "🚀")
 
 
 @router.callback_query(F.data.startswith("onboard:level:"))
@@ -358,11 +392,11 @@ async def onboard_time(
     msg = await require_callback_message(callback)
     if msg is None:
         return
-    await msg.edit_text(
-        t(ui, "onboard_done", level=level, langs=langs, time=time_str)
+    await _show_onboarding_done(
+        callback,
+        msg,
+        ui,
+        level=level,
+        langs=langs,
+        time_str=time_str,
     )
-    await msg.answer(
-        t(ui, "onboard_main_menu"),
-        reply_markup=main_menu_keyboard(ui),
-    )
-    await callback.answer("🚀")

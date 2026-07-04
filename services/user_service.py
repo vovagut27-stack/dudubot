@@ -66,8 +66,10 @@ class UserService:
             await self._session.flush()
             logger.info("Новый пользователь: %s", telegram_id)
         else:
-            user.username = username
-            user.first_name = first_name
+            if username is not None:
+                user.username = username
+            if first_name is not None:
+                user.first_name = first_name
             user.last_active = datetime.now(timezone.utc).replace(tzinfo=None)
 
         return user
