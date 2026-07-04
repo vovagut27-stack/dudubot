@@ -23,14 +23,15 @@ class OnboardingTests(unittest.IsolatedAsyncioTestCase):
             data="onboard:time:09:00",
         )
 
-        await _show_onboarding_done(
-            callback,
-            _FailingMessage(),
-            "ru",
-            level="A1",
-            langs="English",
-            time_str="09:00",
-        )
+        with self.assertLogs("handlers.start", level="ERROR"):
+            await _show_onboarding_done(
+                callback,
+                _FailingMessage(),
+                "ru",
+                level="A1",
+                langs="English",
+                time_str="09:00",
+            )
 
         callback.answer.assert_awaited_once_with("🚀", show_alert=False)
 
