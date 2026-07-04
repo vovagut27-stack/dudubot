@@ -4,11 +4,8 @@ from __future__ import annotations
 
 import os
 
-from sqlalchemy import select
-
 from config import PREMIUM_TEST_DAYS, get_settings
 from database import ensure_database_ready, session_scope
-from models.models import User
 from services.user_service import UserService
 
 
@@ -17,21 +14,13 @@ def _normalize_username(username: str) -> str:
 
 
 async def resolve_telegram_id_by_username(username: str) -> int | None:
-    """Ищет Telegram ID по @username в БД или через Bot API getChat."""
+    """Ищет Telegram ID по live @username через Bot API getChat."""
     name = _normalize_username(username)
     if not name:
         return None
 
     settings = get_settings()
     await ensure_database_ready(settings)
-
-    async with session_scope() as session:
-        result = await session.execute(
-            select(User.telegram_id).where(User.username.ilike(name))
-        )
-        telegram_id = result.scalar_one_or_none()
-        if telegram_id is not None:
-            return int(telegram_id)
 
     token = os.getenv("BOT_TOKEN", "").strip()
     if not token:
@@ -42,6 +31,8 @@ async def resolve_telegram_id_by_username(username: str) -> int | None:
     bot = Bot(token=token)
     try:
         chat = await bot.get_chat(f"@{name}")
+        if getattr(chat, "type", None) != "private":
+            return None
         return int(chat.id)
     except Exception:
         return None
