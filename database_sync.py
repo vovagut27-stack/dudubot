@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -29,6 +31,18 @@ class AsyncCompatSession:
 
     async def flush(self) -> None:
         await asyncio.to_thread(self._session.flush)
+
+    @asynccontextmanager
+    async def begin_nested(self) -> AsyncGenerator[Any, None]:
+        """Async wrapper for a SAVEPOINT transaction."""
+        transaction = await asyncio.to_thread(self._session.begin_nested)
+        try:
+            yield transaction
+        except Exception:
+            await asyncio.to_thread(transaction.rollback)
+            raise
+        else:
+            await asyncio.to_thread(transaction.commit)
 
     def add(self, obj: Any) -> None:
         self._session.add(obj)
