@@ -8,10 +8,10 @@ import logging
 from datetime import date, datetime, time, timedelta, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import DAILY_WORDS_FREE_PER_LANGUAGE, DAILY_WORDS_PREMIUM, FREE_MAX_LANGUAGES
-from database import rollback_session
 from models.models import (
     DailyWordLog,
     PaymentLog,
@@ -192,15 +192,11 @@ class UserService:
             sent_date=sent_date,
             message_id=message_id,
         )
-        self._session.add(log)
         try:
-            await self._session.flush()
-        except Exception as exc:
-            from sqlalchemy.exc import IntegrityError
-
-            if not isinstance(exc, IntegrityError):
-                raise
-            await rollback_session(self._session)
+            async with self._session.begin_nested():
+                self._session.add(log)
+                await self._session.flush()
+        except IntegrityError:
             retry = await self._session.execute(
                 select(DailyWordLog).where(
                     DailyWordLog.user_id == user.id,
