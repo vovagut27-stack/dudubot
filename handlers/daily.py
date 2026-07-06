@@ -27,6 +27,48 @@ logger = logging.getLogger(__name__)
 router = Router(name="daily")
 
 
+async def _safe_answer_word_action(
+    message: Message | None,
+    text: str,
+    *,
+    user_id: int,
+    action: str,
+) -> None:
+    if message is None:
+        return
+    try:
+        await message.answer(text)
+    except Exception:
+        logger.exception(
+            "Failed to send word action feedback action=%s user=%s",
+            action,
+            user_id,
+        )
+
+
+async def _safe_edit_word_action_markup(
+    message: Message | None,
+    word_key: str,
+    *,
+    in_dictionary: bool,
+    user_id: int,
+    action: str,
+) -> None:
+    if message is None or not message.reply_markup:
+        return
+    try:
+        await message.edit_reply_markup(
+            reply_markup=word_actions_keyboard(word_key, in_dictionary=in_dictionary)
+        )
+    except Exception:
+        logger.exception(
+            "Failed to update word action markup action=%s user=%s word=%s",
+            action,
+            user_id,
+            word_key,
+        )
+
+
 def _already_by_language(logs) -> dict[str, set[str]]:
     """Группирует отправленные сегодня слова по языку."""
     by_lang: dict[str, set[str]] = {}
@@ -251,9 +293,12 @@ async def word_learned(
     _, msg = await user_service.mark_word(
         user, word_key, WordStatus.LEARNED, word_service=word_service
     )
-    chat_msg = callback.message
-    if chat_msg is not None:
-        await chat_msg.answer(msg[:200])
+    await _safe_answer_word_action(
+        callback.message,
+        msg[:200],
+        user_id=callback.from_user.id,
+        action="learned",
+    )
 
 
 @router.callback_query(F.data.startswith("word:unknown:"))
@@ -279,9 +324,12 @@ async def word_unknown(
     _, msg = await user_service.mark_word(
         user, word_key, WordStatus.UNKNOWN, word_service=word_service
     )
-    chat_msg = callback.message
-    if chat_msg is not None:
-        await chat_msg.answer(msg[:200])
+    await _safe_answer_word_action(
+        callback.message,
+        msg[:200],
+        user_id=callback.from_user.id,
+        action="unknown",
+    )
 
 
 @router.callback_query(F.data.startswith("word:examples:"))
@@ -386,10 +434,17 @@ async def word_add_dictionary(
         user, word_key, WordStatus.FAVORITE, word_service=word_service
     )
     chat_msg = callback.message
-    if chat_msg is not None:
-        await chat_msg.answer(msg)
-    if chat_msg and chat_msg.reply_markup:
-        await chat_msg.edit_reply_markup(
-            reply_markup=word_actions_keyboard(word_key, in_dictionary=True)
-        )
+    await _safe_answer_word_action(
+        chat_msg,
+        msg,
+        user_id=callback.from_user.id,
+        action="favorite",
+    )
+    await _safe_edit_word_action_markup(
+        chat_msg,
+        word_key,
+        in_dictionary=True,
+        user_id=callback.from_user.id,
+        action="favorite",
+    )
 
