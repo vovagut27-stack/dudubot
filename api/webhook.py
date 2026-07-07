@@ -49,7 +49,7 @@ async def _early_ack_callback(payload: dict) -> None:
 
     bot = Bot(token=token)
     try:
-        callback = CallbackQuery.model_validate(raw)
+        callback = CallbackQuery.model_validate(raw, context={"bot": bot})
         await answer_callback(callback, hint)
     except Exception:
         logger.exception("Early callback ack failed data=%s", data[:80])
