@@ -79,7 +79,7 @@ async def cmd_test_premium(
     message: Message,
     settings: Settings,
 ) -> None:
-    """Выдаёт тестовый Premium администратору или по SETUP_SECRET."""
+    """Выдаёт тестовый Premium администратору или по PREMIUM_ACTIVATION_CODE."""
     if not message.from_user:
         return
 
@@ -115,8 +115,7 @@ async def cmd_test_premium(
         elif hint == "bad_secret":
             await message.answer(
                 "❌ Неверный код.\n\n"
-                "На Vercel в Environment Variables должен быть тот же "
-                "<code>SETUP_SECRET</code> или задайте "
+                "На Vercel в Environment Variables должен быть задан "
                 "<code>PREMIUM_ACTIVATION_CODE</code>."
             )
         else:
