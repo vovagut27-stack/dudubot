@@ -1,33 +1,26 @@
-"""Коды активации Premium (бот и API)."""
+"""Коды активации Premium в боте."""
 
 from __future__ import annotations
 
 import os
 
 
-def _valid_admin_codes() -> set[str]:
-    """Коды для /test_premium и админской активации."""
-    codes: set[str] = set()
-    setup = os.getenv("SETUP_SECRET", "").strip()
-    premium = os.getenv("PREMIUM_ACTIVATION_CODE", "").strip()
-    if setup:
-        codes.add(setup)
-    if premium:
-        codes.add(premium)
-    return codes
-
-
-def _valid_premium_codes() -> set[str]:
-    """Коды для /premium (только PREMIUM_ACTIVATION_CODE, не SETUP_SECRET)."""
+def _valid_activation_codes() -> set[str]:
+    """Коды для /premium и /test_premium."""
     premium = os.getenv("PREMIUM_ACTIVATION_CODE", "").strip()
     return {premium} if premium else set()
 
 
+def _valid_premium_codes() -> set[str]:
+    """Коды для пользовательской активации Premium."""
+    return _valid_activation_codes()
+
+
 def check_activation_code(token: str | None) -> bool:
-    """True для админских кодов (SETUP_SECRET или PREMIUM_ACTIVATION_CODE)."""
+    """True для бот-кода активации Premium."""
     if not token:
         return False
-    return token.strip() in _valid_admin_codes()
+    return token.strip() in _valid_activation_codes()
 
 
 def check_premium_activation_code(token: str | None) -> bool:
