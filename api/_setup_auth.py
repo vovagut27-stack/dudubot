@@ -8,12 +8,11 @@ from urllib.parse import parse_qs, urlparse
 
 
 def allowed_setup_secrets() -> set[str]:
-    """Допустимые секреты для ?secret= в диагностических API."""
+    """Допустимые секреты для setup/diagnostic admin APIs."""
     out: set[str] = set()
-    for key in ("SETUP_SECRET", "CRON_SECRET"):
-        val = os.getenv(key, "").strip()
-        if val:
-            out.add(val)
+    val = os.getenv("SETUP_SECRET", "").strip()
+    if val:
+        out.add(val)
     return out
 
 
