@@ -54,6 +54,21 @@ async def _run_migrate() -> dict:
     }
 
 
+def _is_dispatch_request(query: dict[str, list[str]]) -> bool:
+    dispatch_raw = (query.get("run_dispatch") or [""])[0].strip().lower()
+    return dispatch_raw in ("1", "true", "yes")
+
+
+def _reject_cron_request(handler: BaseHTTPRequestHandler) -> None:
+    handler.send_response(401)
+    handler.end_headers()
+    handler.wfile.write(
+        "Unauthorized - set CRON_SECRET on Vercel or use Bearer SETUP_SECRET".encode(
+            "utf-8"
+        )
+    )
+
+
 class handler(BaseHTTPRequestHandler):
     """GET /api/migrate?secret=ВАШ_SETUP_SECRET"""
 
@@ -61,21 +76,12 @@ class handler(BaseHTTPRequestHandler):
         from urllib.parse import parse_qs, urlparse
 
         query = parse_qs(urlparse(self.path).query)
-        from api._setup_auth import allowed_setup_secrets
+        if _is_dispatch_request(query):
+            from api._cron_auth import verify_cron_request
 
-        secret = (query.get("secret") or [""])[0]
-        allowed = allowed_setup_secrets()
-
-        if not allowed or secret not in allowed:
-            self.send_response(403)
-            self.end_headers()
-            self.wfile.write(b"Forbidden: wrong or missing ?secret=")
-            return
-
-        grant_raw = (query.get("grant_premium") or query.get("telegram_id") or [""])[0].strip()
-        grant_user = (query.get("grant_premium_user") or query.get("username") or [""])[0].strip()
-        dispatch_raw = (query.get("run_dispatch") or [""])[0].strip().lower()
-        if dispatch_raw in ("1", "true", "yes"):
+            if not verify_cron_request(self):
+                _reject_cron_request(self)
+                return
             try:
                 result = asyncio.run(_run_dispatch())
                 body = json.dumps(result, ensure_ascii=False, indent=2)
@@ -91,6 +97,14 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body.encode("utf-8"))
             return
+
+        from api._setup_auth import verify_setup_secret
+
+        if not verify_setup_secret(self):
+            return
+
+        grant_raw = (query.get("grant_premium") or query.get("telegram_id") or [""])[0].strip()
+        grant_user = (query.get("grant_premium_user") or query.get("username") or [""])[0].strip()
 
         if grant_user:
             try:
