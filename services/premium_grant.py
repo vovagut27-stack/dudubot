@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from config import PREMIUM_TEST_DAYS, get_settings
 from database import ensure_database_ready, session_scope
@@ -27,7 +27,7 @@ async def resolve_telegram_id_by_username(username: str) -> int | None:
 
     async with session_scope() as session:
         result = await session.execute(
-            select(User.telegram_id).where(User.username.ilike(name))
+            select(User.telegram_id).where(func.lower(User.username) == name.lower())
         )
         telegram_id = result.scalar_one_or_none()
         if telegram_id is not None:
