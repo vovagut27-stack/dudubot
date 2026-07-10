@@ -38,6 +38,7 @@ class PremiumGrantUsernameLookupTest(unittest.IsolatedAsyncioTestCase):
         await self._add_user(telegram_id=222, username="Millka_2MKY")
 
         with (
+            patch.object(premium_grant, "get_settings", lambda: object()),
             patch.object(premium_grant, "ensure_database_ready", self._noop_ready),
             patch.object(premium_grant, "session_scope", self._session_scope),
             patch.dict(os.environ, {"BOT_TOKEN": ""}),
@@ -50,6 +51,7 @@ class PremiumGrantUsernameLookupTest(unittest.IsolatedAsyncioTestCase):
         await self._add_user(telegram_id=111, username="MillkaA2MKY")
 
         with (
+            patch.object(premium_grant, "get_settings", lambda: object()),
             patch.object(premium_grant, "ensure_database_ready", self._noop_ready),
             patch.object(premium_grant, "session_scope", self._session_scope),
             patch.dict(os.environ, {"BOT_TOKEN": ""}),
